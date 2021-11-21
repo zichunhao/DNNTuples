@@ -5,7 +5,9 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
+# options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
+# options.inputFiles = 'file:/afs/cern.ch/work/c/coli/hww/input/testoutput/ww4q/miniaod_0.root'
+options.inputFiles = '__FILE__'
 options.maxEvents = -1
 
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
@@ -28,6 +30,7 @@ era = None if options.inputDataset else 'Summer19UL17'
 for k in globalTagMap:
     if k in options.inputDataset:
         era = k
+print('++era', era)
 # ---------------------------------------------------------
 process = cms.Process("DNNFiller")
 

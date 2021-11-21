@@ -52,7 +52,8 @@ public:
     W_all=20, W_cq, W_qq,
     Z_all=30, Z_bb, Z_cc, Z_qq,
     H_all=40, H_bb, H_cc, H_qq, H_qqqq, H_tautau,
-    QCD_all=50, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others
+    QCD_all=50, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others,
+    H_wwall=60, H_ww4q, H_ww3q, H_wwlvqq, H_wwleptauvqq, H_wwhadtauvqq, H_wwunmatch
   };
 
 public:

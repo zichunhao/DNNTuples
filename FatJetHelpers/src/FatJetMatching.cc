@@ -542,37 +542,146 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
   if (is_hVV){
     // h->WW or h->ZZ
     std::vector<const reco::GenParticle*> hVV_daus;
+    int n_tau = 0, n_l = 0, n_quarks = 0;
     for (unsigned idau=0; idau<higgs->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(higgs->daughter(idau));
       auto pdgid = std::abs(higgs->daughter(idau)->pdgId());
-      if (pdgid >= ParticleID::p_d && pdgid <= ParticleID::p_b){
+      if (pdgid >= ParticleID::p_d && pdgid <= ParticleID::p_b) {
+        ++n_quarks;
+        hVV_daus.push_back(dau);
+      }else if (pdgid >= ParticleID::p_eminus && pdgid <= ParticleID::p_nu_tau){
+        if (pdgid == ParticleID::p_tauminus) ++n_tau;
+        else ++n_l;
         hVV_daus.push_back(dau);
       }else{
-        const auto d = getDaughterQuarks(getFinal(dau));
-        hVV_daus.insert(hVV_daus.end(), d.begin(), d.end());
+        // const auto d = getDaughterQuarks(getFinal(dau));
+        // hVV_daus.insert(hVV_daus.end(), d.begin(), d.end());
+        auto daufinal = getFinal(dau);
+        for (unsigned j=0; j<daufinal->numberOfDaughters(); ++j){
+          const auto *ddau = dynamic_cast<const reco::GenParticle*>(daufinal->daughter(j));
+          auto dpdgid = std::abs(ddau->pdgId());
+          if (dpdgid >= ParticleID::p_d && dpdgid <= ParticleID::p_b){
+            ++n_quarks;
+            hVV_daus.push_back(ddau);
+          }else if (dpdgid >= ParticleID::p_eminus && dpdgid <= ParticleID::p_nu_tau){
+            if (dpdgid == ParticleID::p_tauminus) ++n_tau;
+            else ++n_l;
+            hVV_daus.push_back(ddau);
+          }
+        }
       }
     }
+    auto is_neutrino = [&](int pdgid){
+      pdgid = std::abs(pdgid);
+      return pdgid == ParticleID::p_nu_e || pdgid == ParticleID::p_nu_mu || pdgid == ParticleID::p_nu_tau;
+    };
+    // auto printDaus = [&](std::vector<const reco::GenParticle*>& parts, const pat::Jet* jet){
+    //   using namespace std;
+    //   cout << "Found " << parts.size() << " quarks from Higgs decay" << endl;
+    //   for (const auto * gp : parts){
+    //     using namespace std;
+    //     printGenParticleInfo(gp, -1);
+    //     cout << " ... dR(q, jet) = " << reco::deltaR(*gp, *jet) << endl;
+    //   }
+    // };
+    // if four daughters are all quarks
+    if (n_quarks == 4){
+      int n_daus_in_jet = 0;
+      for (const auto *gp : hVV_daus){
+        auto dr = reco::deltaR(*gp, *jet);
+        if (dr < distR){
+          ++n_daus_in_jet;
+        }
+      }
+      if (n_daus_in_jet >= 4){
+        // std::cout << "4q!" << std::endl;
+        return std::make_pair(FatJetLabel::H_ww4q, higgs);
+      }
+      else if (n_daus_in_jet >= 3){
+        // std::cout << "3q!" << std::endl;
+        return std::make_pair(FatJetLabel::H_ww3q, higgs);
+      }
+    }else if (n_quarks == 2 && n_tau == 0) { // lvqq
+      int n_daus_in_jet = 0;
+      for (const auto *gp : hVV_daus){
+        if (is_neutrino(gp->pdgId())){
+          continue;
+        }
+        auto dr = reco::deltaR(*gp, *jet);
+        if (dr < distR){
+          ++n_daus_in_jet;
+        }
+      }
+      if (n_daus_in_jet >= 3){
+        // std::cout << "lvqq!" << std::endl;
+        return std::make_pair(FatJetLabel::H_wwlvqq, higgs);
+      }
+    }else if (n_quarks == 2 && n_tau == 1) { // tauvqq
+      int tau_pos = 0;
+      int n_daus_in_jet = 0;
+      for(std::size_t igp = 0; igp < hVV_daus.size(); ++igp) {
+        auto gp = hVV_daus[igp];
+        if (is_neutrino(gp->pdgId())){
+          continue;
+        }
+        if (std::abs(gp->pdgId()) == ParticleID::p_tauminus){
+          tau_pos = igp;
+          continue;
+        }
+        auto dr = reco::deltaR(*gp, *jet);
+        if (dr < distR){
+          ++n_daus_in_jet;
+        }
+      }
+      auto tau = getFinal(hVV_daus[tau_pos]);
+      if (n_daus_in_jet >= 2){ // both two quarks are in
+        bool is_leptau = false;
+        for (unsigned j=0; j<tau->numberOfDaughters(); ++j){
+          const auto *tdau = dynamic_cast<const reco::GenParticle*>(tau->daughter(j));
+          auto tdau_pdgid = std::abs(tdau->pdgId());
+          if (tdau_pdgid == ParticleID::p_eminus || tdau_pdgid == ParticleID::p_muminus){
+            is_leptau = true;
+            auto dr = reco::deltaR(*tdau, *jet);
+            if (dr < distR){
+              // std::cout << "leptau!" << std::endl;
+              return std::make_pair(FatJetLabel::H_wwleptauvqq, higgs);
+            }
+          }
+        }
+        if (!is_leptau){ // hadronic taus
+          auto dr = reco::deltaR(*tau, *jet);
+          if (dr < distR){
+            // std::cout << "hadtau!" << std::endl;
+            return std::make_pair(FatJetLabel::H_wwhadtauvqq, higgs);
+          }
+        }
+      }
+    }else {
+      throw std::logic_error("[FatJetMatching::higgs_label] Illegal H->WW mode");
+    }
+    // std::cout << "**unmatch!" << std::endl;
+    return std::make_pair(FatJetLabel::H_wwunmatch, higgs);
 
-    if (debug_){
-      using namespace std;
-      cout << "Found " << hVV_daus.size() << " quarks from Higgs decay" << endl;
-      for (const auto * gp : hVV_daus){
-        using namespace std;
-        printGenParticleInfo(gp, -1);
-        cout << " ... dR(q, jet) = " << reco::deltaR(*gp, *jet) << endl;
-      }
-    }
+    // if (debug_){
+    //   using namespace std;
+    //   cout << "Found " << hVV_daus.size() << " quarks from Higgs decay" << endl;
+    //   for (const auto * gp : hVV_daus){
+    //     using namespace std;
+    //     printGenParticleInfo(gp, -1);
+    //     cout << " ... dR(q, jet) = " << reco::deltaR(*gp, *jet) << endl;
+    //   }
+    // }
 
-    unsigned n_quarks_in_jet = 0;
-    for (const auto *gp : hVV_daus){
-      auto dr = reco::deltaR(*gp, *jet);
-      if (dr < distR){
-        ++n_quarks_in_jet;
-      }
-    }
-    if (n_quarks_in_jet >= 4){
-      return std::make_pair(FatJetLabel::H_qqqq, higgs);
-    }
+    // unsigned n_quarks_in_jet = 0;
+    // for (const auto *gp : hVV_daus){
+    //   auto dr = reco::deltaR(*gp, *jet);
+    //   if (dr < distR){
+    //     ++n_quarks_in_jet;
+    //   }
+    // }
+    // if (n_quarks_in_jet >= 4){
+    //   return std::make_pair(FatJetLabel::H_qqqq, higgs);
+    // }
 
   }else if (isHadronic(higgs)) {
     // direct h->qq
