@@ -61,8 +61,12 @@ void FatJetInfoFiller::book() {
 
   data.add<int>("label_H_ww4q",       0);
   data.add<int>("label_H_ww3q",       0);
-  data.add<int>("label_H_wwlvqq",     0);
-  data.add<int>("label_H_wwleptauvqq",0);
+  data.add<int>("label_H_ww2qsame",   0);
+  data.add<int>("label_H_ww2qsep",    0);
+  data.add<int>("label_H_wwevqq",     0);
+  data.add<int>("label_H_wwmvqq",     0);
+  data.add<int>("label_H_wwleptauevqq",0);
+  data.add<int>("label_H_wwleptaumvqq",0);
   data.add<int>("label_H_wwhadtauvqq",0);
   data.add<int>("label_H_wwunmatch",  0);
 
@@ -251,8 +255,12 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   data.fill<int>("label_H_ww4q",       fjlabel.first == FatJetMatching::H_ww4q);
   data.fill<int>("label_H_ww3q",       fjlabel.first == FatJetMatching::H_ww3q);
-  data.fill<int>("label_H_wwlvqq",     fjlabel.first == FatJetMatching::H_wwlvqq);
-  data.fill<int>("label_H_wwleptauvqq",fjlabel.first == FatJetMatching::H_wwleptauvqq);
+  data.fill<int>("label_H_ww2qsame",   fjlabel.first == FatJetMatching::H_ww2qsame);
+  data.fill<int>("label_H_ww2qsep",    fjlabel.first == FatJetMatching::H_ww2qsep);
+  data.fill<int>("label_H_wwevqq",     fjlabel.first == FatJetMatching::H_wwevqq);
+  data.fill<int>("label_H_wwmvqq",     fjlabel.first == FatJetMatching::H_wwmvqq);
+  data.fill<int>("label_H_wwleptauevqq",fjlabel.first == FatJetMatching::H_wwleptauevqq);
+  data.fill<int>("label_H_wwleptaumvqq",fjlabel.first == FatJetMatching::H_wwleptaumvqq);
   data.fill<int>("label_H_wwhadtauvqq",fjlabel.first == FatJetMatching::H_wwhadtauvqq);
   data.fill<int>("label_H_wwunmatch",  fjlabel.first == FatJetMatching::H_wwunmatch);
 
