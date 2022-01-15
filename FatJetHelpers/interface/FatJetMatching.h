@@ -52,7 +52,7 @@ public:
     W_all=20, W_cq, W_qq,
     Z_all=30, Z_bb, Z_cc, Z_qq,
     H_all=40, H_bb, H_cc, H_qq, H_qqqq, H_tautau,
-    H_wwall=50, H_ww4q, H_ww3q, H_ww2qsame, H_ww2qsep, H_wwevqq, H_wwmvqq, H_wwleptauevqq, H_wwleptaumvqq, H_wwhadtauvqq, H_wwunmatch,
+    H_wwall=50, H_ww4q, H_ww3q, H_ww2qsame, H_ww2qsep, H_wwevqq, H_wwmvqq, H_wwleptauevqq, H_wwleptaumvqq, H_wwhadtauvqq, H_wwunmatch, H_wwundefined,
     QCD_all=90, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others
   };
 

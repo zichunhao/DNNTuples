@@ -69,6 +69,7 @@ void FatJetInfoFiller::book() {
   data.add<int>("label_H_wwleptaumvqq",0);
   data.add<int>("label_H_wwhadtauvqq",0);
   data.add<int>("label_H_wwunmatch",  0);
+  data.add<int>("label_H_wwundefined",0);
 
   data.add<int>("label_QCD_bb",  0);
   data.add<int>("label_QCD_cc",  0);
@@ -263,6 +264,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("label_H_wwleptaumvqq",fjlabel.first == FatJetMatching::H_wwleptaumvqq);
   data.fill<int>("label_H_wwhadtauvqq",fjlabel.first == FatJetMatching::H_wwhadtauvqq);
   data.fill<int>("label_H_wwunmatch",  fjlabel.first == FatJetMatching::H_wwunmatch);
+  data.fill<int>("label_H_wwundefined",fjlabel.first == FatJetMatching::H_wwundefined);
 
   data.fill<int>("label_QCD_bb",  fjlabel.first == FatJetMatching::QCD_bb);
   data.fill<int>("label_QCD_cc",  fjlabel.first == FatJetMatching::QCD_cc);
