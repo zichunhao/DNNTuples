@@ -681,11 +681,12 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
         }
       }
     }else {
-      return std::make_pair(FatJetLabel::H_wwundefined, higgs);
+      // std::cout << "**undefined!" << std::endl;
+      return std::make_pair(FatJetLabel::Invalid, higgs);
       // throw std::logic_error("[FatJetMatching::higgs_label] Illegal H->WW mode");
     }
     // std::cout << "**unmatch!" << std::endl;
-    return std::make_pair(FatJetLabel::H_wwunmatch, higgs);
+    return std::make_pair(FatJetLabel::Invalid, higgs);
 
     // if (debug_){
     //   using namespace std;
