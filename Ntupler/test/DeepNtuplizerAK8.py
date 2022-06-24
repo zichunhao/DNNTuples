@@ -7,6 +7,11 @@ options = VarParsing('analysis')
 options.outputFile = 'output.root'
 # options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
 # options.inputFiles = 'file:/afs/cern.ch/work/c/coli/hww/input/testoutput/ww4q/miniaod_0.root'
+# New test files
+# options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/100000/039AD718-3EBF-954B-80D1-1A22439C0BA5.root'
+# options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/ZprimeToTT_M4000_W40_TuneCP2_PSweights_13TeV-madgraph-pythiaMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/240000/28EB1B0B-1962-3A44-8706-56B2364205F7.root'
+# options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToWWToWhadWhad_narrow_M-500_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/110000/0AFEDFC6-E31A-F841-B6ED-9D5EF77C2B2A.root'
+# options.inputFiles = 'file:/eos/cms/store/group/cmst3/group/vhcc/sfTuples/20220523_HWW_JHUVariableWMass/2017/mc/BulkGravitonToHHTo4W_MX-600to6000_MH-15to250_JHUVariableWMass_part1/DNNTuples_PrivateMC/220523_095618/0000/miniv2_1.root'
 options.inputFiles = '__FILE__'
 options.maxEvents = -1
 
@@ -227,6 +232,7 @@ process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
 
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
+process.deepntuplizer.isTTBarSample = 'tott' in options.inputDataset.lower() or 'ttbar' in options.inputDataset.lower()
 process.deepntuplizer.isPythia = 'pythia' in options.inputDataset.lower()
 process.deepntuplizer.isHerwig = 'herwig' in options.inputDataset.lower()
 process.deepntuplizer.isMadGraph = 'madgraph' in options.inputDataset.lower()  # note: MG can be interfaced w/ either pythia or herwig
