@@ -906,6 +906,8 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
           return std::make_pair(FatJetLabel::H_bb, higgs_v);
         }else if (pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_c) {
           return std::make_pair(FatJetLabel::H_cc, higgs_v);
+        }else if (pdgid_q1 == ParticleID::p_s && pdgid_q2 == ParticleID::p_s) {
+          return std::make_pair(FatJetLabel::H_ss, higgs_v);
         }else {
           return std::make_pair(FatJetLabel::H_qq, higgs_v);
         }
@@ -932,21 +934,21 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
         cout << "deltaR(jet, tau2)    : " << dr_tau2 << endl;
       }
 
-      auto isHadronicTau = [](const reco::GenParticle* tau){
-        for (const auto &dau : tau->daughterRefVector()){
-          auto pdgid = std::abs(dau->pdgId());
-          if (pdgid==ParticleID::p_eminus || pdgid==ParticleID::p_muminus){
-            return false;
-          }
-        }
-        return true;
-      };
+      auto tau1_daus_info = getTauDaughters(taus.at(0));
+      auto tau2_daus_info = getTauDaughters(taus.at(1));
 
-      auto tau1 = getFinal(taus.at(0));
-      auto tau2 = getFinal(taus.at(1));
-      if (dr_tau1<distR && dr_tau2<distR){
-        if (isHadronicTau(tau1) && isHadronicTau(tau2)) {
-          return std::make_pair(FatJetLabel::H_tautau, higgs_v);
+      // let hadronic tau be the last
+      if (tau1_daus_info.second == 2 && tau2_daus_info.second < 2){
+        std::swap(dr_tau1, dr_tau2);
+        std::swap(tau1_daus_info, tau2_daus_info);
+      }
+      if (tau2_daus_info.second == 2 && dr_tau2 < distR){
+        if (tau1_daus_info.second == 0 && reco::deltaR(tau1_daus_info.first.at(0)->p4(), jet->p4()) < distR){
+          return std::make_pair(FatJetLabel::H_leptauehadtau, higgs_v);
+        }else if (tau1_daus_info.second == 1 && reco::deltaR(tau1_daus_info.first.at(0)->p4(), jet->p4()) < distR){
+          return std::make_pair(FatJetLabel::H_leptaumhadtau, higgs_v);
+        }else if (tau1_daus_info.second == 2 && dr_tau1 < distR){
+          return std::make_pair(FatJetLabel::H_hadtauhadtau, higgs_v);
         }
       }
     }
