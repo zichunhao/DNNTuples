@@ -357,11 +357,11 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_gen_phi", gp_v_size > 0 ? fjlabel.second[0]->phi() : -999);
   data.fill<float>("fj_gen_mass", (fjlabel.first < FatJetMatching::QCD_all && gp_v_size > 0) ? fjlabel.second[0]->mass() : 0);
   data.fill<float>("fj_gen_deltaR", gp_v_size > 0 ? reco::deltaR(jet, fjlabel.second[0]->p4()) : 999);
-  data.fill<float>("fj_gendau1_pt", gp_v_size > 2 ? fjlabel.second[1]->pt() : -999);
-  data.fill<float>("fj_gendau1_eta", gp_v_size > 2 ? fjlabel.second[1]->eta() : -999);
-  data.fill<float>("fj_gendau1_phi", gp_v_size > 2 ? fjlabel.second[1]->phi() : -999);
-  data.fill<float>("fj_gendau1_mass", (fjlabel.first < FatJetMatching::QCD_all && gp_v_size > 2) ? fjlabel.second[1]->mass() : 0);
-  data.fill<float>("fj_gendau1_deltaR", gp_v_size > 2 ? reco::deltaR(jet, fjlabel.second[1]->p4()) : 999);
+  data.fill<float>("fj_gendau1_pt", gp_v_size > 1 ? fjlabel.second[1]->pt() : -999);
+  data.fill<float>("fj_gendau1_eta", gp_v_size > 1 ? fjlabel.second[1]->eta() : -999);
+  data.fill<float>("fj_gendau1_phi", gp_v_size > 1 ? fjlabel.second[1]->phi() : -999);
+  data.fill<float>("fj_gendau1_mass", (fjlabel.first < FatJetMatching::QCD_all && gp_v_size > 1) ? fjlabel.second[1]->mass() : 0);
+  data.fill<float>("fj_gendau1_deltaR", gp_v_size > 1 ? reco::deltaR(jet, fjlabel.second[1]->p4()) : 999);
   data.fill<float>("fj_gendau2_pt", gp_v_size > 2 ? fjlabel.second[2]->pt() : -999);
   data.fill<float>("fj_gendau2_eta", gp_v_size > 2 ? fjlabel.second[2]->eta() : -999);
   data.fill<float>("fj_gendau2_phi", gp_v_size > 2 ? fjlabel.second[2]->phi() : -999);

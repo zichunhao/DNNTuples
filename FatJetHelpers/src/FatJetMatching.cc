@@ -359,6 +359,7 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   for (const auto &dau : top->daughterRefVector()){
     if (std::abs(dau->pdgId()) == ParticleID::p_Wplus){
       w_from_top = getFinal(&(*dau));
+      top_v.push_back(w_from_top);
     }else if (std::abs(dau->pdgId()) <= ParticleID::p_b){
       // ! use <= p_b ! -- can also have charms etc.
       b_from_top = dynamic_cast<const reco::GenParticle*>(&(*dau));
@@ -485,6 +486,9 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
         if (wdecay == W_leptauev) return std::make_pair(FatJetLabel::Top_bleptauev, top_v);
         else if (wdecay == W_leptaumv) return std::make_pair(FatJetLabel::Top_bleptaumv, top_v);
       }
+    } else {
+      // test for W if dr(b, jet) > distR
+      return w_label(jet, w_from_top, genParticles, distR);
     }
   }
 
