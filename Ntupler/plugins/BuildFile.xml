@@ -1,7 +1,14 @@
 <use name="FWCore/Framework"/>
 <library file="*.cc" name="DeepNTuplesNtuplerPlugins">
+  <use name="DataFormats/Candidate"/>
   <use name="DataFormats/PatCandidates"/>
+  <use name="DataFormats/NanoAOD"/>
+  <use name="DataFormats/VertexReco"/>
+  <use name="DataFormats/BTauReco"/>
+  <use name="CommonTools/Utils"/>
   <use name="CommonTools/UtilAlgos"/>
+  <use name="RecoBTag/FeatureTools"/>
+  <use name="TrackingTools/Records"/>
   <use name="DeepNTuples/Ntupler"/>
   <flags EDM_PLUGIN="1"/>
 </library>

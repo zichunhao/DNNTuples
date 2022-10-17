@@ -104,6 +104,7 @@ from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as p
 
 # !!! set `useReclusteredJets = True ` if you need to recluster jets (e.g., to adopt a new Puppi tune) !!!
 useReclusteredJets = False
+doCustomTaggerInference = True
 jetR = 0.8
 
 bTagDiscriminators = [
@@ -118,6 +119,13 @@ bTagDiscriminators = [
 ]
 
 subjetBTagDiscriminators = ['None']
+
+btagDiscriminatorsCustom = []
+if doCustomTaggerInference:
+    from DeepNTuples.Ntupler.jetTools import updateJetCollection # use custom updataJetCollection
+    from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedDeepHWWV1_cff import _pfMassDecorrelatedDeepHWWV1JetTagsAll
+    from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV1_cff import _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll
+    btagDiscriminatorsCustom = _pfMassDecorrelatedDeepHWWV1JetTagsAll + [n for n in _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll if 'hidNeuron' not in n]
 
 if useReclusteredJets:
     JETCorrLevels = ['L2Relative', 'L3Absolute']
@@ -134,7 +142,7 @@ if useReclusteredJets:
         jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
+        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + btagDiscriminatorsCustom,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
@@ -144,7 +152,7 @@ else:
         jetSource=cms.InputTag('slimmedJetsAK8'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=['None'],
+        btagDiscriminators=['None'] if len(btagDiscriminatorsCustom) == 0 else btagDiscriminatorsCustom,
     )
     srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
@@ -203,18 +211,19 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
+process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + btagDiscriminatorsCustom
 
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
 
 # determine sample type with inputFiles name
-process.deepntuplizer.isQCDSample = '/QCD_' in options.inputFiles
-process.deepntuplizer.isTTBarSample = 'tott' in options.inputFiles.lower() or 'ttbar' in options.inputFiles.lower()
-process.deepntuplizer.isPythia = 'pythia' in options.inputFiles.lower()
-process.deepntuplizer.isHerwig = 'herwig' in options.inputFiles.lower()
+_inputfile = options.inputFiles[0]
+process.deepntuplizer.isQCDSample = '/QCD_' in _inputfile
+process.deepntuplizer.isTTBarSample = 'tott' in _inputfile.lower() or 'ttbar' in _inputfile.lower()
+process.deepntuplizer.isPythia = 'pythia' in _inputfile.lower()
+process.deepntuplizer.isHerwig = 'herwig' in _inputfile.lower()
 # note: MG can be interfaced w/ either pythia or herwig
-process.deepntuplizer.isMadGraph = 'madgraph' in options.inputFiles.lower()
+process.deepntuplizer.isMadGraph = 'madgraph' in _inputfile.lower()
 
 process.deepntuplizer.isTrainSample = options.isTrainSample
 if not options.inputDataset:
