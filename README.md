@@ -1,23 +1,21 @@
 # DNNTuplesAK8
 
 ## Setup
-```
-# use CMSSW_11_1_0_pre8 which has Puppi V14
-cmsrel CMSSW_11_1_0_pre8
-cd CMSSW_11_1_0_pre8/src
+```bash
+cmsrel CMSSW_10_6_30
+cd CMSSW_10_6_30/src
 cmsenv
 
-git cms-addpkg PhysicsTools/ONNXRuntime
+# use an updated onnxruntime package
+bash <(curl -s https://raw.githubusercontent.com/colizz/DNNTuples/dev-UL-hww/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh)
 
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/UL/11_1_X
-
-# Use a faster version of ONNXRuntime
-$CMSSW_BASE/src/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh
+git clone git@github.com:colizz/DNNTuplesAK8.git DeepNTuples -b dev-UL-hww
 
 scram b -j8
 ```
 
+<!-- 
 ## Submit jobs via CRAB
 
 **Step 0**: switch to the crab production directory and set up grid proxy, CRAB environment, etc.
@@ -56,4 +54,4 @@ More options of this `crab.py` script can be found with:
 
 ```bash
 ./crab.py -h
-```
+``` -->
