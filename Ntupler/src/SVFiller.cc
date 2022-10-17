@@ -54,6 +54,12 @@ void SVFiller::book() {
   data.addMulti<float>("sv_d3dsig");
   data.addMulti<float>("sv_costhetasvpv");
 
+  // four-vector
+  data.addMulti<float>("sv_px");
+  data.addMulti<float>("sv_py");
+  data.addMulti<float>("sv_pz");
+  data.addMulti<float>("sv_energy");
+
 }
 
 bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
@@ -109,6 +115,11 @@ bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_hel
     data.fillMulti<float>("sv_d3derr", d3d.error());
     data.fillMulti<float>("sv_d3dsig", d3d.significance());
     data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(*sv, pv));
+    
+    data.fillMulti<float>("sv_px", sv->px());
+    data.fillMulti<float>("sv_py", sv->py());
+    data.fillMulti<float>("sv_pz", sv->pz());
+    data.fillMulti<float>("sv_energy", sv->energy());
   }
 
   return true;

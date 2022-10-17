@@ -87,6 +87,11 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_btagJetDistVal");
 //  data.addMulti<float>("pfcand_btagJetDistSig"); // always gives 0?
 
+  // four-vector
+  data.addMulti<float>("pfcand_px");
+  data.addMulti<float>("pfcand_py");
+  data.addMulti<float>("pfcand_pz");
+  data.addMulti<float>("pfcand_energy");
 }
 
 bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
@@ -184,6 +189,10 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fillMulti<float>("pfcand_btagJetDistVal", catchInfs(trkinfo.getTrackJetDistVal()));
 //    data.fillMulti<float>("pfcand_btagJetDistSig", catchInfs(trkinfo.getTrackJetDistSig()));
 
+    data.fillMulti<float>("pfcand_px", packed_cand->px());
+    data.fillMulti<float>("pfcand_py", packed_cand->py());
+    data.fillMulti<float>("pfcand_pz", packed_cand->pz());
+    data.fillMulti<float>("pfcand_energy", packed_cand->energy());
 
   }
 
