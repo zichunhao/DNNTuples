@@ -1,6 +1,4 @@
-#!/bin/bash
-set -e
-set -x
+#!/bin/bash -xe
 
 if [[ -z "$CMSSW_BASE" ]]; then
 	echo '$CMSSW_BASE not defined -- run cmsenv first!'
@@ -12,14 +10,14 @@ INSTALL_DIR="$CMSSW_BASE/ORT_INSTALL"
 [[ -d $INSTALL_DIR ]] && rm -r $INSTALL_DIR
 mkdir $INSTALL_DIR && cd $INSTALL_DIR
 
-wget http://hqu.web.cern.ch/hqu/tools/onnxruntime/onnxruntime-1.2.0_ppc_58f53966d.tar.gz -O ort.tgz
+curl -s https://coli.web.cern.ch/coli/tmp/.221016-012210_ort_patch/ort_fix.tgz -o ort.tgz
 tar -xf ort.tgz && rm ort.tgz
 
 sed -i 's@_ONNXRUNTIME_INSTALL_PATH_@'"$INSTALL_DIR"'@g' $INSTALL_DIR/onnxruntime.xml
 scram setup $INSTALL_DIR/onnxruntime.xml
 
 cd $CMSSW_BASE/src
-git cms-addpkg PhysicsTools/ONNXRuntime
+rsync -avP /cvmfs/cms.cern.ch/$SCRAM_ARCH/cms/cmssw/$CMSSW_VERSION/src/PhysicsTools/ONNXRuntime $CMSSW_BASE/src/PhysicsTools
 cd $CMSSW_BASE/src/PhysicsTools/ONNXRuntime
 scram b clean && scram b -j16
 
