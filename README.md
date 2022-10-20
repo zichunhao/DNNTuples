@@ -7,7 +7,7 @@ cd CMSSW_10_6_30/src
 cmsenv
 
 # use an updated onnxruntime package
-bash <(curl -s https://raw.githubusercontent.com/colizz/DNNTuples/dev-UL-hww/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh)
+bash <(curl -s https://raw.githubusercontent.com/colizz/DNNTuples/dev-UL-hww/Ntupler/scripts/install_onnxruntime.sh)
 
 # clone this repo into "DeepNTuples" directory
 git clone git@github.com:colizz/DNNTuplesAK8.git DeepNTuples -b dev-UL-hww

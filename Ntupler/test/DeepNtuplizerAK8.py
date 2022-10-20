@@ -30,7 +30,13 @@ era = 'auto'
 for k in globalTagMap:
     if k in options.inputDataset:
         era = k
-era = 'UL17'
+if options.inputDataset == '':
+    _inputfile = options.inputFiles[0]
+    if '2017/' in _inputfile or 'UL17' in _inputfile:
+        era = 'UL17'
+    elif '2018/' in _inputfile or 'UL18' in _inputfile:
+        era = 'UL18'
+print('++era: ', era)
 # ---------------------------------------------------------
 process = cms.Process("DNNFiller")
 
@@ -125,7 +131,7 @@ if doCustomTaggerInference:
     from DeepNTuples.Ntupler.jetTools import updateJetCollection # use custom updataJetCollection
     from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedDeepHWWV1_cff import _pfMassDecorrelatedDeepHWWV1JetTagsAll
     from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV1_cff import _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll
-    btagDiscriminatorsCustom = _pfMassDecorrelatedDeepHWWV1JetTagsAll + [n for n in _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll if 'hidNeuron' not in n]
+    btagDiscriminatorsCustom = _pfMassDecorrelatedDeepHWWV1JetTagsAll + _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll
 
 if useReclusteredJets:
     JETCorrLevels = ['L2Relative', 'L3Absolute']
