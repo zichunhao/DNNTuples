@@ -540,6 +540,8 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
     return std::make_pair(FatJetLabel::Invalid, empty_v); 
   }
 
+  // comment out code for finding additional b/c-hadrons
+  /*
   // now we find a valid W jets. Next step is to see if additional b/c-hadrons fall into the jet
   enum WMatchQuark {match_b, match_c, match_none};
   WMatchQuark wmatchq = match_none;
@@ -602,7 +604,8 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
     else if (wdecay == W_leptaumv)  return std::make_pair(FatJetLabel::W_leptaumv_c, w_v);
     else if (wdecay == W_hadtauv)  return std::make_pair(FatJetLabel::W_hadtauv_c, w_v);
   }
-  else {
+  else */
+  {
     if (wdecay == W_cq)  return std::make_pair(FatJetLabel::W_cq, w_v);
     else if (wdecay == W_qq)  return std::make_pair(FatJetLabel::W_qq, w_v);
     else if (wdecay == W_ev)  return std::make_pair(FatJetLabel::W_ev, w_v);
