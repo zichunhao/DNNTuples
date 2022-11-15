@@ -107,6 +107,7 @@ print('Using global tag', process.GlobalTag.globaltag)
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
+from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetMassRegressionOutputs as pfParticleNetMassRegressionOutputs
 
 # !!! set `useReclusteredJets = True ` if you need to recluster jets (e.g., to adopt a new Puppi tune) !!!
 useReclusteredJets = False
@@ -148,7 +149,7 @@ if useReclusteredJets:
         jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + btagDiscriminatorsCustom,
+        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
@@ -158,7 +159,7 @@ else:
         jetSource=cms.InputTag('slimmedJetsAK8'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=['None'] if len(btagDiscriminatorsCustom) == 0 else btagDiscriminatorsCustom,
+        btagDiscriminators=pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom,
     )
     srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
@@ -217,7 +218,7 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + btagDiscriminatorsCustom
+process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom
 
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
