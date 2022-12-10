@@ -9,6 +9,7 @@
 #define NTUPLER_INTERFACE_JETINFOFILLER_H_
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/PatCandidates/interface/MET.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "PhysicsTools/SelectorUtils/interface/PFJetIDSelectionFunctor.h"
 
@@ -58,6 +59,10 @@ private:
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
 
   PFJetIDSelectionFunctor jetIdTight;
+
+  bool addMET_ = false;
+  edm::EDGetTokenT<std::vector<pat::MET>> metToken_;
+  edm::Handle<std::vector<pat::MET>> mets;
 
 };
 

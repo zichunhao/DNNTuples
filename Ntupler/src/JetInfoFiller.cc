@@ -22,6 +22,8 @@ void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCo
   puToken_ = cc.consumes<std::vector<PileupSummaryInfo>>(iConfig.getParameter<edm::InputTag>("puInfo"));
   rhoToken_ = cc.consumes<double>(iConfig.getParameter<edm::InputTag>("rhoInfo"));
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
+  metToken_ = cc.consumes<std::vector<pat::MET>>(iConfig.getParameter<edm::InputTag>("METs"));
+  addMET_ = iConfig.getUntrackedParameter<bool>("addMET", false);
 }
 
 void JetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -31,6 +33,9 @@ void JetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& i
   event_ = iEvent.id().event();
   iEvent.getByToken(genParticlesToken_, genParticlesHandle);
   flavorDef.setGenParticles(*genParticlesHandle);
+  if (addMET_) {
+    iEvent.getByToken(metToken_, mets);
+  }
 
 }
 
@@ -53,6 +58,14 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
     if (bx == 0) {
       data.fill<float>("ntrueInt", v.getTrueNumInteractions());
     }
+  }
+
+  // MET information
+  if (addMET_) {
+    data.fill<float>("met_pt", mets->front().pt());
+    data.fill<float>("met_phi", mets->front().phi());
+    data.fill<float>("met_sumEt", mets->front().sumEt());
+    data.fill<float>("met_significance", mets->front().significance());
   }
 
   // truth labels
@@ -96,6 +109,14 @@ void JetInfoFiller::book() {
   data.add<float>("ntrueInt", 0);
   data.add<unsigned>("event_no", 0);
   data.add<unsigned>("jet_no", 0);
+
+  // MET information
+  if (addMET_) {
+    data.add<float>("met_pt", 0);
+    data.add<float>("met_phi", 0);
+    data.add<float>("met_sumEt", 0);
+    data.add<float>("met_significance", 0);
+  }
 
   // truth labels
   data.add<float>("gen_pt", 0);
