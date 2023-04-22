@@ -16,6 +16,7 @@ void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCo
   minPt_ = iConfig.getUntrackedParameter<double>("jetPtMin", 150);
   maxPt_ = iConfig.getUntrackedParameter<double>("jetPtMax", -1);
   maxAbsEta_ = iConfig.getUntrackedParameter<double>("jetAbsEtaMax", 2.4);
+  isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
   btag_discriminators_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminators");
 
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
@@ -93,10 +94,13 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
   // jet id
   data.fill<float>("jet_tightId", jetIdTight(jet));
 
-  for(const auto& disc : btag_discriminators_) {
-    std::string name(disc);
-    std::replace(name.begin(), name.end(), ':', '_');
-    data.fill<float>(name, catchInfs(jet.bDiscriminator(disc), -99));
+  // discriminators
+  if (!isTrainSample_) {
+    for(const auto& disc : btag_discriminators_) {
+      std::string name(disc);
+      std::replace(name.begin(), name.end(), ':', '_');
+      data.fill<float>(name, catchInfs(jet.bDiscriminator(disc), -99));
+    }
   }
 
   return true;
@@ -141,9 +145,12 @@ void JetInfoFiller::book() {
   // jet id
   data.add<float>("jet_tightId", 0);
 
-  for(auto name : btag_discriminators_) {
-    std::replace(name.begin(), name.end(), ':', '_');
-    data.add<float>(name, 0);
+  // jet discriminators
+  if (!isTrainSample_) {
+    for(auto name : btag_discriminators_) {
+      std::replace(name.begin(), name.end(), ':', '_');
+      data.add<float>(name, 0);
+    }
   }
 }
 

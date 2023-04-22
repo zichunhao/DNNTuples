@@ -151,8 +151,8 @@ process.deepntuplizer.bDiscriminators = bTagDiscriminators
 process.deepntuplizer.jetR = jetR
 process.deepntuplizer.jetPtMin = 150
 
-process.deepntuplizer.genJetsMatch = 'ak15GenJetsWithNuMatch'
-process.deepntuplizer.genJetsSoftDropMatch = 'ak15GenJetsWithNuSoftDropMatch'
+process.deepntuplizer.genJetsWithMuMatch = 'ak15GenJetsWithNuMatch'
+process.deepntuplizer.genJetsWithMuSoftDropMatch = 'ak15GenJetsWithNuSoftDropMatch'
 
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
 process.deepntuplizer.isPythia = 'pythia' in options.inputDataset.lower()

@@ -33,31 +33,23 @@ enum PdgId { p_unknown, p_d, p_u, p_s, p_c, p_b, p_t, p_bprime, p_tprime,
   p_sigmacplus = 4212, p_sigmacpp = 4222, p_xicplus = 4232, p_omegac0 = 4332,
   p_sigmabminus = 5112, p_lambdab0 = 5122, p_xibminus = 5132, p_sigmab0 = 5212, p_sigmabplus = 5222,
   p_xib0 = 5232, p_omegabminus = 5332,
+  p_Hbsm = 5000003,
 };
 }
 
 class FatJetMatching {
 public:
-  enum FatJetFlavor {
-    Default = 0,
-    Top = 1,
-    W = 2,
-    Z = 3,
-    H = 4,
+  struct FatJetMatchingResult {
+    std::string label;
+    std::vector<const reco::GenParticle*> particles;
+    std::vector<const reco::GenParticle*> resParticles;
   };
-
-  enum FatJetLabel {
-    Invalid=0,
-    Top_all=100, Top_bcq, Top_bqq, Top_bc, Top_bq, Top_bev, Top_bmv, Top_bleptauev, Top_bleptaumv, Top_bhadtauv,
-    W_all=200, W_cq_b, W_qq_b, W_ev_b, W_mv_b, W_leptauev_b, W_leptaumv_b, W_hadtauv_b,
-      W_cq_c, W_qq_c, W_ev_c, W_mv_c, W_leptauev_c, W_leptaumv_c, W_hadtauv_c,
-      W_cq, W_qq, W_ev, W_mv, W_leptauev, W_leptaumv, W_hadtauv,
-    Z_all=300, Z_bb, Z_cc, Z_qq,
-    H_all=400, H_bb, H_cc, H_ss, H_qq, H_qqqq, H_leptauehadtau, H_leptaumhadtau, H_hadtauhadtau,
-    H_wwall=500, H_ww4q_2c, H_ww4q_1c, H_ww4q_0c, H_ww3q_2c, H_ww3q_1c, H_ww3q_0c, H_ww2qsame, H_ww2qsep, 
-      H_wwevqq_1c, H_wwevqq_0c, H_wwmvqq_1c, H_wwmvqq_0c, H_wwleptauevqq_1c, H_wwleptauevqq_0c, H_wwleptaumvqq_1c, H_wwleptaumvqq_0c, H_wwhadtauvqq_1c, H_wwhadtauvqq_0c,
-    QCD_all=900, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others
-  };
+  FatJetMatchingResult& getResult() { return result_; }
+  void clearResult() {
+    result_.label = "Invalid";
+    result_.particles.clear();
+    result_.resParticles.clear();
+  }
 
 public:
   FatJetMatching() {}
@@ -65,16 +57,16 @@ public:
 
   virtual ~FatJetMatching() {}
 
-  std::pair<FatJetFlavor, const reco::GenParticle*> flavorJMAR(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double genRadius = 0.6);
-
-  std::pair<FatJetLabel, std::vector<const reco::GenParticle*> > flavorLabel(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR);
+  void flavorLabel(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR, bool isMDTagger);
 
 private:
-  std::pair<FatJetLabel, std::vector<const reco::GenParticle*> > top_label(const pat::Jet *jet, const reco::GenParticle *parton, const reco::GenParticleCollection& genParticles, double distR);
-  std::pair<FatJetLabel, std::vector<const reco::GenParticle*> > w_label(const pat::Jet *jet, const reco::GenParticle *parton, const reco::GenParticleCollection& genParticles, double distR);
-  std::pair<FatJetLabel, std::vector<const reco::GenParticle*> > z_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
-  std::pair<FatJetLabel, std::vector<const reco::GenParticle*> > higgs_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
-  std::pair<FatJetLabel, std::vector<const reco::GenParticle*> > qcd_label(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR);
+  void top_label(const pat::Jet *jet, const reco::GenParticle *parton, const reco::GenParticleCollection& genParticles, double distR);
+  void w_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR, bool is_from_top);
+  void z_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
+  void higgs_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
+  void higgs_WW_label(const pat::Jet* jet, std::vector<const reco::GenParticle*>& hVV_daughters, double distR);
+  void higgs_ZZ_label(const pat::Jet* jet, std::vector<const reco::GenParticle*>& hVV_daughters, double distR);
+  void qcd_label(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR);
 
 
 private:
@@ -103,9 +95,9 @@ private:
   bool   requiresQuarksContained_ = true;
 
   bool debug_ = false;
+  bool debug_print_genparts_table_ = false;
   std::unordered_set<const reco::GenParticle*> processed_;
-
-
+  FatJetMatchingResult result_{"Invalid", std::vector<const reco::GenParticle*>(), std::vector<const reco::GenParticle*>()};
 };
 
 }

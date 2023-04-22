@@ -17,10 +17,13 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   useReclusteredJets_ = iConfig.getParameter<bool>("useReclusteredJets");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTTBarSample_ = iConfig.getUntrackedParameter<bool>("isTTBarSample", false);
+  isHVV2DVarMassSample_ = iConfig.getUntrackedParameter<bool>("isHVV2DVarMassSample", false);
   sample_use_pythia_ = iConfig.getParameter<bool>("isPythia");
   sample_use_herwig_ = iConfig.getParameter<bool>("isHerwig");
   sample_use_madgraph_ = iConfig.getParameter<bool>("isMadGraph");
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
+  isMDTagger_ = iConfig.getUntrackedParameter<bool>("isMDTagger", true);
+  fillSeparateLabels_ = iConfig.getUntrackedParameter<bool>("fillSeparateLabels", false);
   fjName = iConfig.getParameter<std::string>("jetType") + std::to_string(int(10*jetR_));
 }
 
@@ -30,85 +33,50 @@ void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup
 
 void FatJetInfoFiller::book() {
   // truth labels
-  data.add<int>("fj_label", 0);
   data.add<int>("fj_isTop", 0);
   data.add<int>("fj_isW", 0);
   data.add<int>("fj_isZ", 0);
-  data.add<int>("fj_isH", 0);
+  data.add<int>("fj_isH2p", 0);
+  data.add<int>("fj_isHWW", 0);
+  data.add<int>("fj_isHZZ", 0);
   data.add<int>("fj_isQCD", 0);
 
-  data.add<int>("label_Top_bcq",          0);
-  data.add<int>("label_Top_bqq",          0);
-  data.add<int>("label_Top_bc",           0);
-  data.add<int>("label_Top_bq",           0);
-  data.add<int>("label_Top_bev",          0);
-  data.add<int>("label_Top_bmv",          0);
-  data.add<int>("label_Top_bleptauev",    0);
-  data.add<int>("label_Top_bleptaumv",    0);
-  data.add<int>("label_Top_bhadtauv",     0);
+  data.add<int>("fj_label", 0);
+  if (labels_.empty()) {
+    // initialize labels
+    if (isMDTagger_) {
+      for (auto& l: labelTop_)  labels_.push_back("Top_" + l);
+      for (auto& l: labelH2p_)  labels_.push_back("H_" + l);
+      for (auto& l: labelHWW_)  labels_.push_back("H_WW_" + l);
+      for (auto& l: labelHWW_)  labels_.push_back("H_WxWx_" + l);
+      for (auto& l: labelHWW_)  labels_.push_back("H_WxWxStar_" + l);
+      for (auto& l: labelHZZ_)  labels_.push_back("H_ZZ_" + l);
+      for (auto& l: labelHZZ_)  labels_.push_back("H_ZxZx_" + l);
+      for (auto& l: labelHZZ_)  labels_.push_back("H_ZxZxStar_" + l);
+      for (auto& l: labelQCD_)  labels_.push_back("QCD_" + l);
+    } else {
+      for (auto& l: labelTop_)  labels_.push_back("Top_" + l);
+      for (auto& l: labelH2p_)  labels_.push_back("H_" + l);
+      for (auto& l: labelW_)    labels_.push_back("W_" + l);
+      for (auto& l: labelZ_)    labels_.push_back("Z_" + l);
+    }
 
-  data.add<int>("label_W_cq_b",           0);
-  data.add<int>("label_W_qq_b",           0);
-  data.add<int>("label_W_ev_b",           0);
-  data.add<int>("label_W_mv_b",           0);
-  data.add<int>("label_W_leptauev_b",     0);
-  data.add<int>("label_W_leptaumv_b",     0);
-  data.add<int>("label_W_hadtauv_b",      0);
-  data.add<int>("label_W_cq_c",           0);
-  data.add<int>("label_W_qq_c",           0);
-  data.add<int>("label_W_ev_c",           0);
-  data.add<int>("label_W_mv_c",           0);
-  data.add<int>("label_W_leptauev_c",     0);
-  data.add<int>("label_W_leptaumv_c",     0);
-  data.add<int>("label_W_hadtauv_c",      0);
-  data.add<int>("label_W_cq",             0);
-  data.add<int>("label_W_qq",             0);
-  data.add<int>("label_W_ev",             0);
-  data.add<int>("label_W_mv",             0);
-  data.add<int>("label_W_leptauev",       0);
-  data.add<int>("label_W_leptaumv",       0);
-  data.add<int>("label_W_hadtauv",        0);
+    if (debug_) {
+      std::cout << "All labels (isMDTagger = " << isMDTagger_ << "):" << std::endl;
+      for (auto& l: labels_)  std::cout << "'" << l << "', ";
+      std::cout << std::endl;
+    }
+  }
 
-  data.add<int>("label_Z_bb",    0);
-  data.add<int>("label_Z_cc",    0);
-  data.add<int>("label_Z_qq",    0);
-
-  data.add<int>("label_H_bb",    0);
-  data.add<int>("label_H_cc",    0);
-  data.add<int>("label_H_ss",    0);
-  data.add<int>("label_H_qq",    0);
-  data.add<int>("label_H_qqqq",  0);
-  data.add<int>("label_H_leptauehadtau",   0);
-  data.add<int>("label_H_leptaumhadtau",   0);
-  data.add<int>("label_H_hadtauhadtau",    0);
-
-  data.add<int>("label_H_ww4q_2c",         0);
-  data.add<int>("label_H_ww4q_1c",         0);
-  data.add<int>("label_H_ww4q_0c",         0);
-  data.add<int>("label_H_ww3q_2c",         0);
-  data.add<int>("label_H_ww3q_1c",         0);
-  data.add<int>("label_H_ww3q_0c",         0);
-  data.add<int>("label_H_ww2qsame",        0);
-  data.add<int>("label_H_ww2qsep",         0);
-  data.add<int>("label_H_wwevqq_1c",       0);
-  data.add<int>("label_H_wwevqq_0c",       0);
-  data.add<int>("label_H_wwmvqq_1c",       0);
-  data.add<int>("label_H_wwmvqq_0c",       0);
-  data.add<int>("label_H_wwleptauevqq_1c", 0);
-  data.add<int>("label_H_wwleptauevqq_0c", 0);
-  data.add<int>("label_H_wwleptaumvqq_1c", 0);
-  data.add<int>("label_H_wwleptaumvqq_0c", 0);
-  data.add<int>("label_H_wwhadtauvqq_1c",  0);
-  data.add<int>("label_H_wwhadtauvqq_0c",  0);
-
-  data.add<int>("label_QCD_bb",  0);
-  data.add<int>("label_QCD_cc",  0);
-  data.add<int>("label_QCD_b",   0);
-  data.add<int>("label_QCD_c",   0);
-  data.add<int>("label_QCD_others", 0);
+  if (fillSeparateLabels_) {
+    for (auto& label: labels_) {
+      data.add<int>("fj_label_" + label, 0);
+    }
+  }
 
   data.add<int>("sample_isQCD", 0);
   data.add<int>("sample_isTTBar", 0);
+  data.add<int>("sample_isHVV2DVarMass", 0);
   data.add<int>("sample_use_pythia", 0);
   data.add<int>("sample_use_herwig", 0);
   data.add<int>("sample_use_madgraph", 0);
@@ -117,13 +85,6 @@ void FatJetInfoFiller::book() {
 
 //  // legacy labels
 //  data.add<int>("fj_labelLegacy", 0);
-
-  // JMAR label
-  data.add<int>("fj_labelJMAR", 0);
-  data.add<float>("fjJMAR_gen_pt", 0);
-  data.add<float>("fjJMAR_gen_eta", 0);
-  data.add<float>("fjJMAR_gen_phi", 0);
-  data.add<int>("fjJMAR_gen_pdgid", 0);
 
   // gen-matched particle (top/W/etc.)
   data.add<float>("fj_gen_pt", 0);
@@ -142,6 +103,12 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_gendau2_mass", 0);
   data.add<float>("fj_gendau2_deltaR", 999);
 
+  // sum of all hard particles inside a jet 
+  data.add<float>("fj_genparts_pt", 0);
+  data.add<float>("fj_genparts_eta", 0);
+  data.add<float>("fj_genparts_phi", 0);
+  data.add<float>("fj_genparts_mass", 0);
+
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
   data.add<float>("fj_genOverReco_pt", 1); // default to 1 if not gen-matched
@@ -154,6 +121,12 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_genjet_targetmass", 0);
   data.add<float>("fj_genOverReco_sdmass", 1); // default to 1 if not gen-matched
   data.add<float>("fj_genOverReco_sdmass_null", 0); // default to 0 if not gen-matched
+  data.add<float>("fj_genjet_nomu_pt", 0);
+  data.add<float>("fj_genOverReco_nomu_pt_null", 0); // default to 0 if not gen-matched
+  data.add<float>("fj_genjet_nomu_mass", 0);
+  data.add<float>("fj_genOverReco_nomu_mass_null", 0); // default to 0 if not gen-matched
+  data.add<float>("fj_genjet_nomu_sdmass", 0);
+  data.add<float>("fj_genOverReco_nomu_sdmass_null", 0); // default to 0 if not gen-matched
   // ----------------------------------
 
   // fatjet kinematics
@@ -247,126 +220,107 @@ void FatJetInfoFiller::book() {
 
 bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
 
-  // JMAR label
-  {
-    auto jmar = fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.75*jetR_);
-    data.fill<int>("fj_labelJMAR", jmar.first);
-    data.fill<float>("fjJMAR_gen_pt", jmar.second ? jmar.second->pt() : -999);
-    data.fill<float>("fjJMAR_gen_eta", jmar.second ? jmar.second->eta() : -999);
-    data.fill<float>("fjJMAR_gen_phi", jmar.second ? jmar.second->phi() : -999);
-    data.fill<int>("fjJMAR_gen_pdgid", jmar.second ? jmar.second->pdgId() : -999);
+  // ----------------------------------------------------------------
+  fjmatch_.flavorLabel(&jet, *genParticlesHandle, jetR_, isMDTagger_);
+  std::string fjlabel = fjmatch_.getResult().label;
+  auto& resparts = fjmatch_.getResult().resParticles;
+  auto& parts = fjmatch_.getResult().particles;
+
+  // update the label for HWW and HZZ
+  if (fjlabel.rfind("H_WW", 0) == 0 && isHVV2DVarMassSample_) {
+    float mass_asymm = std::abs(resparts[1]->mass() - resparts[2]->mass()) / (resparts[1]->mass() + resparts[2]->mass());
+    if (mass_asymm < 0.1) {
+      fjlabel.replace(fjlabel.find("H_WW"), 4, "H_WxWx");
+    } else {
+      fjlabel.replace(fjlabel.find("H_WW"), 4, "H_WxWxStar");
+    }
+    if (debug_) std::cout << "V masses: " << resparts[1]->mass() << " " << resparts[2]->mass() << " Asymm: " << mass_asymm << std::endl;
+  }
+  if (fjlabel.rfind("H_ZZ", 0) == 0 && isHVV2DVarMassSample_) {
+    float mass_asymm = std::abs(resparts[1]->mass() - resparts[2]->mass()) / (resparts[1]->mass() + resparts[2]->mass());
+    if (mass_asymm < 0.1) {
+      fjlabel.replace(fjlabel.find("H_ZZ"), 4, "H_ZxZx");
+    } else {
+      fjlabel.replace(fjlabel.find("H_ZZ"), 4, "H_ZxZxStar");
+    }
+    if (debug_) std::cout << "V masses: " << resparts[1]->mass() << " " << resparts[2]->mass() << " Asymm: " << mass_asymm << std::endl;
+  }
+  if (debug_) {
+    std::cout << ">> debug fjlabel: " << fjlabel << "  " << std::endl;
+    std::cout << "   resonance parts: "; for (auto& p: resparts) {std::cout << p->pdgId() << " ";} std::cout << std::endl;
+    std::cout << "   parts: "; for (auto& p: parts) {std::cout << p->pdgId() << " ";} std::cout << std::endl;
   }
 
-  // ----------------------------------------------------------------
-//  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
-  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, jetR_);
-
-  data.fill<int>("fj_label", fjlabel.first);
-
-  data.fill<int>("fj_isTop", fjlabel.first >= FatJetMatching::Top_all && fjlabel.first < FatJetMatching::W_all);
-  data.fill<int>("fj_isW",   fjlabel.first >= FatJetMatching::W_all && fjlabel.first < FatJetMatching::Z_all);
-  data.fill<int>("fj_isZ",   fjlabel.first >= FatJetMatching::Z_all && fjlabel.first < FatJetMatching::H_all);
-  data.fill<int>("fj_isH",   fjlabel.first >= FatJetMatching::H_all && fjlabel.first < FatJetMatching::QCD_all);
-  data.fill<int>("fj_isQCD", fjlabel.first >= FatJetMatching::QCD_all);
-
   // veto unmatched jets in signal samples for training
-  if (isTrainSample_ && !isQCDSample_ && fjlabel.first >= FatJetMatching::QCD_all)
+  if (isTrainSample_ && !isQCDSample_ && fjlabel.rfind("QCD_", 0) == 0)
     return false;
 
-  data.fill<int>("label_Top_bcq",         fjlabel.first == FatJetMatching::Top_bcq);
-  data.fill<int>("label_Top_bqq",         fjlabel.first == FatJetMatching::Top_bqq);
-  data.fill<int>("label_Top_bc",          fjlabel.first == FatJetMatching::Top_bc);
-  data.fill<int>("label_Top_bq",          fjlabel.first == FatJetMatching::Top_bq);
-  data.fill<int>("label_Top_bev",         fjlabel.first == FatJetMatching::Top_bev);
-  data.fill<int>("label_Top_bmv",         fjlabel.first == FatJetMatching::Top_bmv);
-  data.fill<int>("label_Top_bleptauev",   fjlabel.first == FatJetMatching::Top_bleptauev);
-  data.fill<int>("label_Top_bleptaumv",   fjlabel.first == FatJetMatching::Top_bleptaumv);
-  data.fill<int>("label_Top_bhadtauv",    fjlabel.first == FatJetMatching::Top_bhadtauv);
+  data.fill<int>("fj_isTop", fjlabel.rfind("Top_", 0) == 0);
+  data.fill<int>("fj_isW",   fjlabel.rfind("W_", 0) == 0);
+  data.fill<int>("fj_isZ",   fjlabel.rfind("Z_", 0) == 0);
+  data.fill<int>("fj_isH2p", fjlabel.rfind("H_", 0) == 0 && !fjlabel.rfind("H_WW_", 0) == 0 && !fjlabel.rfind("H_WxWx_", 0) == 0 && !fjlabel.rfind("H_WxWxStar_", 0) == 0 && !fjlabel.rfind("H_ZZ_", 0) == 0 && !fjlabel.rfind("H_ZxZx_", 0) == 0 && !fjlabel.rfind("H_ZxZxStar_", 0) == 0);
+  data.fill<int>("fj_isHWW", fjlabel.rfind("H_WW_", 0) == 0 || fjlabel.rfind("H_WxWx_", 0) == 0 || fjlabel.rfind("H_WxWxStar_", 0) == 0);
+  data.fill<int>("fj_isHZZ", fjlabel.rfind("H_ZZ_", 0) == 0 || fjlabel.rfind("H_ZxZx_", 0) == 0 || fjlabel.rfind("H_ZxZxStar_", 0) == 0);
+  data.fill<int>("fj_isQCD", fjlabel.rfind("QCD_", 0) == 0);
 
-  data.fill<int>("label_W_cq_b",          fjlabel.first == FatJetMatching::W_cq_b);
-  data.fill<int>("label_W_qq_b",          fjlabel.first == FatJetMatching::W_qq_b);
-  data.fill<int>("label_W_ev_b",          fjlabel.first == FatJetMatching::W_ev_b);
-  data.fill<int>("label_W_mv_b",          fjlabel.first == FatJetMatching::W_mv_b);
-  data.fill<int>("label_W_leptauev_b",    fjlabel.first == FatJetMatching::W_leptauev_b);
-  data.fill<int>("label_W_leptaumv_b",    fjlabel.first == FatJetMatching::W_leptaumv_b);
-  data.fill<int>("label_W_hadtauv_b",     fjlabel.first == FatJetMatching::W_hadtauv_b);
-  data.fill<int>("label_W_cq_c",          fjlabel.first == FatJetMatching::W_cq_c);
-  data.fill<int>("label_W_qq_c",          fjlabel.first == FatJetMatching::W_qq_c);
-  data.fill<int>("label_W_ev_c",          fjlabel.first == FatJetMatching::W_ev_c);
-  data.fill<int>("label_W_mv_c",          fjlabel.first == FatJetMatching::W_mv_c);
-  data.fill<int>("label_W_leptauev_c",    fjlabel.first == FatJetMatching::W_leptauev_c);
-  data.fill<int>("label_W_leptaumv_c",    fjlabel.first == FatJetMatching::W_leptaumv_c);
-  data.fill<int>("label_W_hadtauv_c",     fjlabel.first == FatJetMatching::W_hadtauv_c);
-  data.fill<int>("label_W_cq",            fjlabel.first == FatJetMatching::W_cq);
-  data.fill<int>("label_W_qq",            fjlabel.first == FatJetMatching::W_qq);
-  data.fill<int>("label_W_ev",            fjlabel.first == FatJetMatching::W_ev);
-  data.fill<int>("label_W_mv",            fjlabel.first == FatJetMatching::W_mv);
-  data.fill<int>("label_W_leptauev",      fjlabel.first == FatJetMatching::W_leptauev);
-  data.fill<int>("label_W_leptaumv",      fjlabel.first == FatJetMatching::W_leptaumv);
-  data.fill<int>("label_W_hadtauv",       fjlabel.first == FatJetMatching::W_hadtauv);
+  // find the label index
+  int label_index = -1;
+  auto it = std::find(labels_.begin(), labels_.end(), fjlabel);
+  if (it != labels_.end()) {
+    label_index = std::distance(labels_.begin(), it);
+  }else {
+    throw std::logic_error("[FatJetInfoFiller::fill]: unexpected label " + fjlabel);
+  }
+  // if (debug_) std::cout << "   label_index: " << label_index << std::endl;
 
-  data.fill<int>("label_Z_bb",    fjlabel.first == FatJetMatching::Z_bb);
-  data.fill<int>("label_Z_cc",    fjlabel.first == FatJetMatching::Z_cc);
-  data.fill<int>("label_Z_qq",    fjlabel.first == FatJetMatching::Z_qq);
+  // fill the label index
+  data.fill<int>("fj_label", label_index);
 
-  data.fill<int>("label_H_bb",    fjlabel.first == FatJetMatching::H_bb);
-  data.fill<int>("label_H_cc",    fjlabel.first == FatJetMatching::H_cc);
-  data.fill<int>("label_H_ss",    fjlabel.first == FatJetMatching::H_ss);
-  data.fill<int>("label_H_qq",    fjlabel.first == FatJetMatching::H_qq);
-  data.fill<int>("label_H_qqqq",  fjlabel.first == FatJetMatching::H_qqqq);
-  data.fill<int>("label_H_leptauehadtau",   fjlabel.first == FatJetMatching::H_leptauehadtau);
-  data.fill<int>("label_H_leptaumhadtau",   fjlabel.first == FatJetMatching::H_leptaumhadtau);
-  data.fill<int>("label_H_hadtauhadtau",    fjlabel.first == FatJetMatching::H_hadtauhadtau);
-
-  data.fill<int>("label_H_ww4q_2c",         fjlabel.first == FatJetMatching::H_ww4q_2c);
-  data.fill<int>("label_H_ww4q_0c",         fjlabel.first == FatJetMatching::H_ww4q_0c);
-  data.fill<int>("label_H_ww4q_1c",         fjlabel.first == FatJetMatching::H_ww4q_1c);
-  data.fill<int>("label_H_ww3q_2c",         fjlabel.first == FatJetMatching::H_ww3q_2c);
-  data.fill<int>("label_H_ww3q_0c",         fjlabel.first == FatJetMatching::H_ww3q_0c);
-  data.fill<int>("label_H_ww3q_1c",         fjlabel.first == FatJetMatching::H_ww3q_1c);
-  data.fill<int>("label_H_ww2qsame",        fjlabel.first == FatJetMatching::H_ww2qsame);
-  data.fill<int>("label_H_ww2qsep",         fjlabel.first == FatJetMatching::H_ww2qsep);
-  data.fill<int>("label_H_wwevqq_1c",       fjlabel.first == FatJetMatching::H_wwevqq_1c);
-  data.fill<int>("label_H_wwevqq_0c",       fjlabel.first == FatJetMatching::H_wwevqq_0c);
-  data.fill<int>("label_H_wwmvqq_1c",       fjlabel.first == FatJetMatching::H_wwmvqq_1c);
-  data.fill<int>("label_H_wwmvqq_0c",       fjlabel.first == FatJetMatching::H_wwmvqq_0c);
-  data.fill<int>("label_H_wwleptauevqq_1c", fjlabel.first == FatJetMatching::H_wwleptauevqq_1c);
-  data.fill<int>("label_H_wwleptauevqq_0c", fjlabel.first == FatJetMatching::H_wwleptauevqq_0c);
-  data.fill<int>("label_H_wwleptaumvqq_1c", fjlabel.first == FatJetMatching::H_wwleptaumvqq_1c);
-  data.fill<int>("label_H_wwleptaumvqq_0c", fjlabel.first == FatJetMatching::H_wwleptaumvqq_0c);
-  data.fill<int>("label_H_wwhadtauvqq_1c",  fjlabel.first == FatJetMatching::H_wwhadtauvqq_1c);
-  data.fill<int>("label_H_wwhadtauvqq_0c",  fjlabel.first == FatJetMatching::H_wwhadtauvqq_0c);
-
-  data.fill<int>("label_QCD_bb",  fjlabel.first == FatJetMatching::QCD_bb);
-  data.fill<int>("label_QCD_cc",  fjlabel.first == FatJetMatching::QCD_cc);
-  data.fill<int>("label_QCD_b",   fjlabel.first == FatJetMatching::QCD_b);
-  data.fill<int>("label_QCD_c",   fjlabel.first == FatJetMatching::QCD_c);
-  data.fill<int>("label_QCD_others", fjlabel.first == FatJetMatching::QCD_others);
+  // fill separate labels
+  if (fillSeparateLabels_) {
+    for (int i=0; i < (int)labels_.size(); ++i) {
+      data.fill<int>("label_" + labels_[i], i == label_index);
+    }
+  }
 
   data.fill<int>("sample_isQCD",  isQCDSample_);
   data.fill<int>("sample_isTTBar",  isTTBarSample_);
+  data.fill<int>("sample_isHVV2DVarMass",  isHVV2DVarMassSample_);
   data.fill<int>("sample_use_pythia", sample_use_pythia_);
   data.fill<int>("sample_use_herwig", sample_use_herwig_);
   data.fill<int>("sample_use_madgraph", sample_use_madgraph_); // MG can be interfaced w/ either pythia or herwig
 
-
   // gen-matched particle (top/W/etc.)
-  int gp_v_size = fjlabel.second.size();
-  data.fill<float>("fj_gen_pt", gp_v_size > 0 ? fjlabel.second[0]->pt() : -999);
-  data.fill<float>("fj_gen_eta", gp_v_size > 0 ? fjlabel.second[0]->eta() : -999);
-  data.fill<float>("fj_gen_phi", gp_v_size > 0 ? fjlabel.second[0]->phi() : -999);
-  data.fill<float>("fj_gen_mass", (fjlabel.first < FatJetMatching::QCD_all && gp_v_size > 0) ? fjlabel.second[0]->mass() : 0);
-  data.fill<float>("fj_gen_deltaR", gp_v_size > 0 ? reco::deltaR(jet, fjlabel.second[0]->p4()) : 999);
-  data.fill<float>("fj_gendau1_pt", gp_v_size > 1 ? fjlabel.second[1]->pt() : -999);
-  data.fill<float>("fj_gendau1_eta", gp_v_size > 1 ? fjlabel.second[1]->eta() : -999);
-  data.fill<float>("fj_gendau1_phi", gp_v_size > 1 ? fjlabel.second[1]->phi() : -999);
-  data.fill<float>("fj_gendau1_mass", (fjlabel.first < FatJetMatching::QCD_all && gp_v_size > 1) ? fjlabel.second[1]->mass() : 0);
-  data.fill<float>("fj_gendau1_deltaR", gp_v_size > 1 ? reco::deltaR(jet, fjlabel.second[1]->p4()) : 999);
-  data.fill<float>("fj_gendau2_pt", gp_v_size > 2 ? fjlabel.second[2]->pt() : -999);
-  data.fill<float>("fj_gendau2_eta", gp_v_size > 2 ? fjlabel.second[2]->eta() : -999);
-  data.fill<float>("fj_gendau2_phi", gp_v_size > 2 ? fjlabel.second[2]->phi() : -999);
-  data.fill<float>("fj_gendau2_mass", (fjlabel.first < FatJetMatching::QCD_all && gp_v_size > 2) ? fjlabel.second[2]->mass() : 0);
-  data.fill<float>("fj_gendau2_deltaR", gp_v_size > 2 ? reco::deltaR(jet, fjlabel.second[2]->p4()) : 999);
+  int resparts_size = resparts.size();
+  data.fill<float>("fj_gen_pt", resparts_size > 0 ? resparts[0]->pt() : -999);
+  data.fill<float>("fj_gen_eta", resparts_size > 0 ? resparts[0]->eta() : -999);
+  data.fill<float>("fj_gen_phi", resparts_size > 0 ? resparts[0]->phi() : -999);
+  data.fill<float>("fj_gen_mass", resparts_size > 0 ? resparts[0]->mass() : 0);
+  data.fill<float>("fj_gen_deltaR", resparts_size > 0 ? reco::deltaR(jet, resparts[0]->p4()) : 999);
+  data.fill<float>("fj_gendau1_pt", resparts_size > 1 ? resparts[1]->pt() : -999);
+  data.fill<float>("fj_gendau1_eta", resparts_size > 1 ? resparts[1]->eta() : -999);
+  data.fill<float>("fj_gendau1_phi", resparts_size > 1 ? resparts[1]->phi() : -999);
+  data.fill<float>("fj_gendau1_mass", resparts_size > 1 ? resparts[1]->mass() : 0);
+  data.fill<float>("fj_gendau1_deltaR", resparts_size > 1 ? reco::deltaR(jet, resparts[1]->p4()) : 999);
+  data.fill<float>("fj_gendau2_pt", resparts_size > 2 ? resparts[2]->pt() : -999);
+  data.fill<float>("fj_gendau2_eta", resparts_size > 2 ? resparts[2]->eta() : -999);
+  data.fill<float>("fj_gendau2_phi", resparts_size > 2 ? resparts[2]->phi() : -999);
+  data.fill<float>("fj_gendau2_mass", resparts_size > 2 ? resparts[2]->mass() : 0);
+  data.fill<float>("fj_gendau2_deltaR", resparts_size > 2 ? reco::deltaR(jet, resparts[2]->p4()) : 999);
+
+  // sum of all hard particles inside a jet
+  ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > sumP4(0,0,0,0);
+  for (auto& p: parts) sumP4 += p->p4();
+  data.fill<float>("fj_genparts_pt", sumP4.pt());
+  data.fill<float>("fj_genparts_eta", sumP4.eta());
+  data.fill<float>("fj_genparts_phi", sumP4.phi());
+  data.fill<float>("fj_genparts_mass", sumP4.mass());
+
+  if (debug_) {
+    std::cout << "   gen resonance mass " << (resparts_size > 0 ? resparts[0]->mass() : 0) << std::endl;
+    std::cout << "   gen particle mass  " << sumP4.mass() << std::endl;
+  }
+
   // ----------------------------------
 
   // fatjet kinematics
@@ -438,6 +392,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fill<float>("fj_genjet_mass", genjet->mass());
     data.fill<float>("fj_genOverReco_mass", catchInfs(genjet->mass() / jet.mass(), 1));
     data.fill<float>("fj_genOverReco_mass_null", catchInfs(genjet->mass() / jet.mass(), 0));
+    if (debug_) std::cout << "   gen jet mass        " << genjet->mass() << std::endl;
   }
   const auto *sdgenjet = jet_helper.genjetWithNuSoftDrop();
   if (sdgenjet){
@@ -445,9 +400,27 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     auto pos = [](double x){ return x<0 ? 0 : x; };
     data.fill<float>("fj_genjet_sdmass", pos(sdgenjet->mass()));
     data.fill<float>("fj_genjet_sdmass_sqrt", std::sqrt(pos(sdgenjet->mass())));
-    data.fill<float>("fj_genjet_targetmass", (fjlabel.first < FatJetMatching::QCD_all && !fjlabel.second.empty()) ? fjlabel.second[0]->mass() : pos(sdgenjet->mass()) );
+    data.fill<float>("fj_genjet_targetmass", (!fjlabel.rfind("QCD_", 0) == 0 && !resparts.empty()) ? resparts[0]->mass() : pos(sdgenjet->mass()) );
     data.fill<float>("fj_genOverReco_sdmass", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 1));
     data.fill<float>("fj_genOverReco_sdmass_null", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 0));
+    if (debug_) std::cout << "   gen jet sdmass      " << pos(sdgenjet->mass()) << std::endl;
+  }
+  const auto *genjetnomu = jet_helper.genjetNoNu();
+  if (genjetnomu){
+    // jet here points to the uncorrected jet
+    data.fill<float>("fj_genjet_nomu_pt", genjetnomu->pt());
+    data.fill<float>("fj_genOverReco_nomu_pt_null", catchInfs(genjetnomu->pt() / jet.pt(), 0));
+    data.fill<float>("fj_genjet_nomu_mass", genjetnomu->mass());
+    data.fill<float>("fj_genOverReco_nomu_mass_null", catchInfs(genjetnomu->mass() / jet.mass(), 0));
+    if (debug_) std::cout << "   gen jet nomu mass   " << genjetnomu->mass() << std::endl;
+  }
+  const auto *sdgenjetnomu = jet_helper.genjetNoNuSoftDrop();
+  if (sdgenjetnomu){
+    // jet here points to the uncorrected jet
+    auto pos = [](double x){ return x<0 ? 0 : x; };
+    data.fill<float>("fj_genjet_nomu_sdmass", pos(sdgenjetnomu->mass()));
+    data.fill<float>("fj_genOverReco_nomu_sdmass_null", catchInfs(pos(sdgenjetnomu->mass()) / pos(msd_uncorr), 0));
+    if (debug_) std::cout << "   gen jet nomu sdmass " << pos(sdgenjetnomu->mass()) << std::endl;
   }
 
 
@@ -498,5 +471,4 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   return true;
 }
 
-} /* namespace deepntuples */
-
+}

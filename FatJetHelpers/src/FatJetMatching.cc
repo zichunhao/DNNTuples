@@ -13,12 +13,13 @@
 
 using namespace deepntuples;
 
-std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching::flavorJMAR(const pat::Jet* jet,
-    const reco::GenParticleCollection& genParticles, double genRadius) {
+void FatJetMatching::flavorLabel(const pat::Jet* jet,
+    const reco::GenParticleCollection& genParticles, double distR, bool isMDTagger) {
 
   processed_.clear();
+  clearResult();
 
-  if (debug_) {
+  if (debug_print_genparts_table_) {
     std::cout << "\n=======\nJet (energy, pT, eta, phi) = "
         << jet->energy() << ", " << jet->pt() << ", " << jet->eta() << ", " << jet->phi()
         << std::endl << std::endl;
@@ -36,180 +37,28 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
 
     auto pdgid = std::abs(gp->pdgId());
     if (pdgid == ParticleID::p_t){
-      // top
-      auto top = getFinal(gp);
-      // find the W and test if it's hadronic
-      const reco::GenParticle *w_from_top = nullptr, *b_from_top = nullptr;
-      for (const auto &dau : top->daughterRefVector()){
-        if (std::abs(dau->pdgId()) == ParticleID::p_Wplus){
-          w_from_top = getFinal(&(*dau));
-        }else if (std::abs(dau->pdgId()) <= ParticleID::p_b){
-          // ! use <= p_b ! -- can also have charms etc.
-          // for quarks use the first one in the decay chain
-          b_from_top = dynamic_cast<const reco::GenParticle*>(&(*dau));
-        }
+      clearResult();
+      top_label(jet, gp, genParticles, distR);
+      if (getResult().label != "Invalid"){
+        return;
       }
-      if (!w_from_top || !b_from_top) throw std::logic_error("[FatJetMatching::flavor] Cannot find b or W from top decay: "+std::to_string(ipart));
-      if (isHadronic(w_from_top)) {
-        if (debug_){
-          using namespace std;
-          cout << "jet: " << jet->polarP4() << endl;
-          cout << "top: "; printGenParticleInfo(top, -1);
-          cout << "b:   "; printGenParticleInfo(b_from_top, -1);
-          cout << "W:   "; printGenParticleInfo(w_from_top, -1);
-        }
-
-        double dr_jet_top = reco::deltaR(jet->p4(), top->p4());
-        double dr_top_wdaus = maxDeltaRToDaughterQuarks(top, w_from_top);
-        double dr_top_b     = reco::deltaR(top->p4(), b_from_top->p4());
-        if (debug_){
-          using namespace std;
-          cout << "deltaR(jet, top)   : " << dr_jet_top << endl;
-          cout << "deltaR(top, b)     : " << dr_top_b << endl;
-          cout << "deltaR(top, w daus): " << dr_top_wdaus << endl;
-        }
-        // top
-        if (dr_top_wdaus < genRadius && dr_top_b < genRadius && dr_jet_top < genRadius) return std::make_pair(FatJetFlavor::Top, top);
-
-        double dr_jet_w = reco::deltaR(jet->p4(), w_from_top->p4());
-        double dr_w = maxDeltaRToDaughterQuarks(w_from_top, w_from_top);
-        if (debug_){
-          using namespace std;
-          cout << "deltaR(jet, w)     : " << dr_jet_w << endl;
-          cout << "deltaR(w, w_daus)  : " << dr_w << endl;
-        }
-        if (dr_w < genRadius && dr_jet_w < genRadius) return std::make_pair(FatJetFlavor::W, w_from_top);
+    }else if (pdgid == ParticleID::p_h0 || pdgid == ParticleID::p_H0 || pdgid == ParticleID::p_Hplus || pdgid == ParticleID::p_Hbsm){
+      clearResult();
+      higgs_label(jet, gp, distR);
+      if (getResult().label != "Invalid"){
+        return;
       }
-    }else if (pdgid == ParticleID::p_h0) {
-      // Higgs
-      auto h = getFinal(gp);
-      if (isHadronic(h)) {
-        if (debug_){
-          using namespace std;
-          cout << "jet: " << jet->polarP4() << endl;
-          cout << "H:   "; printGenParticleInfo(h, -1);
-        }
-        double dr_jet_h = reco::deltaR(jet->p4(), h->p4());
-        double dr_hdaus = maxDeltaRToDaughterQuarks(h, h); // only works for h->bb??
-        if (debug_){
-          using namespace std;
-          cout << "deltaR(jet, H)   : " << dr_jet_h << endl;
-          cout << "deltaR(h, h daus): " << dr_hdaus << endl;
-        }
-        if (dr_hdaus < genRadius && dr_jet_h < genRadius) return std::make_pair(FatJetFlavor::H, h);
+    }else if (!isMDTagger && pdgid == ParticleID::p_Wplus){
+      clearResult();
+      w_label(jet, gp, distR, /*is_from_top=*/ false);
+      if (getResult().label != "Invalid"){
+        return;
       }
-    }else if (pdgid == ParticleID::p_Wplus){
-      // W: not from top, or top not in jet cone
-      auto w = getFinal(gp);
-      if (isHadronic(w)) {
-        if (debug_){
-          using namespace std;
-          cout << "jet: " << jet->polarP4() << endl;
-          cout << "W:   "; printGenParticleInfo(w, -1);
-        }
-        double dr_jet_w = reco::deltaR(jet->p4(), w->p4());
-        double dr_wdaus = maxDeltaRToDaughterQuarks(w, w);
-        if (debug_){
-          using namespace std;
-          cout << "deltaR(jet, w)   : " << dr_jet_w << endl;
-          cout << "deltaR(w, w daus): " << dr_wdaus << endl;
-        }
-        if (dr_wdaus < genRadius && dr_jet_w < genRadius) return std::make_pair(FatJetFlavor::W, w);
-
-      }
-    }else if (pdgid == ParticleID::p_Z0) {
-      // Z
-      auto z = getFinal(gp);
-      if (isHadronic(z)) {
-        if (debug_){
-          using namespace std;
-          cout << "jet: " << jet->polarP4() << endl;
-          cout << "Z:   "; printGenParticleInfo(z, -1);
-        }
-        double dr_jet_z = reco::deltaR(jet->p4(), z->p4());
-        double dr_zdaus = maxDeltaRToDaughterQuarks(z, z);
-        if (debug_){
-          using namespace std;
-          cout << "deltaR(jet, Z)   : " << dr_jet_z << endl;
-          cout << "deltaR(Z, Z daus): " << dr_zdaus << endl;
-        }
-        if (dr_zdaus < genRadius && dr_jet_z < genRadius) return std::make_pair(FatJetFlavor::Z, z);
-      }
-    }else {
-      // ?
-    }
-  }
-
-  if (genParticles.size() != processed_.size())
-    throw std::logic_error("[FatJetMatching::flavor] Not all genParticles are processed!");
-
-  const reco::GenParticle *parton = nullptr;
-  double minDR = 999;
-  for (const auto &gp : genParticles){
-    if (gp.status() != 23) continue;
-    auto pdgid = std::abs(gp.pdgId());
-    if (!(pdgid<ParticleID::p_t || pdgid==ParticleID::p_g)) continue;
-    auto dr = reco::deltaR(gp, *jet);
-    if (dr<genRadius && dr<minDR){
-      minDR = dr;
-      parton = &gp;
-    }
-  }
-  if (debug_){
-    using namespace std;
-    if (parton){
-      cout << "parton"; printGenParticleInfo(parton, -1);
-      cout << "dr(jet, parton): " << minDR << endl;
-    }
-  }
-
-  return std::make_pair(FatJetFlavor::Default, parton);
-
-}
-
-
-
-std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > FatJetMatching::flavorLabel(const pat::Jet* jet,
-    const reco::GenParticleCollection& genParticles, double distR) {
-
-  processed_.clear();
-
-  if (debug_) {
-    std::cout << "\n=======\nJet (energy, pT, eta, phi) = "
-        << jet->energy() << ", " << jet->pt() << ", " << jet->eta() << ", " << jet->phi()
-        << std::endl << std::endl;
-    printGenInfoHeader();
-    for (unsigned ipart = 0; ipart<genParticles.size(); ++ipart){
-      printGenParticleInfo(&genParticles[ipart], ipart);
-    }
-  }
-
-  for (unsigned ipart = 0; ipart<genParticles.size(); ++ipart){
-    const auto *gp = &genParticles[ipart];
-
-    if (processed_.count(gp)) continue;
-    processed_.insert(gp);
-
-    auto pdgid = std::abs(gp->pdgId());
-    if (pdgid == ParticleID::p_t){
-      auto result = top_label(jet, gp, genParticles, distR);
-      if (result.first != FatJetLabel::Invalid){
-        return result;
-      }
-    }else if (pdgid == ParticleID::p_h0){
-      auto result = higgs_label(jet, gp, distR);
-      if (result.first != FatJetLabel::Invalid){
-        return result;
-      }
-    }else if (pdgid == ParticleID::p_Wplus){
-      auto result = w_label(jet, gp, genParticles, distR);
-      if (result.first != FatJetLabel::Invalid){
-        return result;
-      }
-    }else if (pdgid == ParticleID::p_Z0){
-      auto result = z_label(jet, gp, distR);
-      if (result.first != FatJetLabel::Invalid){
-        return result;
+    }else if (!isMDTagger && pdgid == ParticleID::p_Z0){
+      clearResult();
+      z_label(jet, gp, distR);
+      if (getResult().label != "Invalid"){
+        return;
       }
     }
   }
@@ -217,7 +66,8 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   if (genParticles.size() != processed_.size())
     throw std::logic_error("[FatJetMatching::flavor] Not all genParticles are processed!");
 
-  return qcd_label(jet, genParticles, distR);
+  clearResult();
+  qcd_label(jet, genParticles, distR);
 
 }
 
@@ -348,18 +198,18 @@ std::pair<std::vector<const reco::GenParticle*>, int> FatJetMatching::getTauDaug
   return std::make_pair(daughters, 2); // hadronic mode
 }
 
-std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > FatJetMatching::top_label(const pat::Jet* jet, const reco::GenParticle *parton, const reco::GenParticleCollection& genParticles, double distR)
+void FatJetMatching::top_label(const pat::Jet* jet, const reco::GenParticle *parton, const reco::GenParticleCollection& genParticles, double distR)
 {
-
   // top
   auto top = getFinal(parton);
-  std::vector<const reco::GenParticle*> top_v = {top}, empty_v = {};
+  getResult().resParticles.push_back(top); // push a genparticle top quark
+
   // find the W and test if it's hadronic
   const reco::GenParticle *w_from_top = nullptr, *b_from_top = nullptr;
   for (const auto &dau : top->daughterRefVector()){
     if (std::abs(dau->pdgId()) == ParticleID::p_Wplus){
       w_from_top = getFinal(&(*dau));
-      top_v.push_back(w_from_top);
+      getResult().resParticles.push_back(w_from_top); // push the W from top
     }else if (std::abs(dau->pdgId()) <= ParticleID::p_b){
       // ! use <= p_b ! -- can also have charms etc.
       b_from_top = dynamic_cast<const reco::GenParticle*>(&(*dau));
@@ -368,7 +218,7 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   if (!w_from_top || !b_from_top) throw std::logic_error("[FatJetMatching::top_label] Cannot find b or W from top decay!");
 
   // detect W decay mode
-  enum WDecay {W_cq, W_qq, W_ev, W_mv, W_leptauev, W_leptaumv, W_hadtauv, W_null};
+  enum WDecay {W_cs, W_qq, W_ev, W_mv, W_tauev, W_taumv, W_tauhv, W_null};
   WDecay wdecay = W_null;
   std::vector<const reco::GenParticle*> tau_daus;
   auto wdaus = getDaughters(w_from_top);
@@ -378,18 +228,18 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   else if (pdgid_0 == ParticleID::p_tauminus){
     auto tau_daus_info = getTauDaughters(wdaus.at(0));
     tau_daus = tau_daus_info.first;
-    if (tau_daus_info.second == 0)  wdecay = W_leptauev;
-    else if (tau_daus_info.second == 1)  wdecay = W_leptaumv;
-    else if (tau_daus_info.second == 2)  wdecay = W_hadtauv;
+    if (tau_daus_info.second == 0)  wdecay = W_tauev;
+    else if (tau_daus_info.second == 1)  wdecay = W_taumv;
+    else if (tau_daus_info.second == 2)  wdecay = W_tauhv;
   }
   else { // hadronic decay
     if (std::abs(wdaus.at(0)->pdgId()) == ParticleID::p_c || std::abs(wdaus.at(1)->pdgId()) == ParticleID::p_c){
-      wdecay = W_cq;
+      wdecay = W_cs;
     }
     else wdecay = W_qq;
   }
 
-  if (wdecay == W_cq || wdecay == W_qq) {
+  if (wdecay == W_cs || wdecay == W_qq) {
     if (debug_){
       using namespace std;
       cout << "jet: " << jet->polarP4() << endl;
@@ -418,6 +268,7 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
       }
 
       if (dr_b < distR){
+        getResult().particles.push_back(b_from_top); // push to particle list
         auto pdgid_q1 = std::abs(wdaus.at(0)->pdgId());
         auto pdgid_q2 = std::abs(wdaus.at(1)->pdgId());
         if (debug_){
@@ -427,22 +278,30 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
         }
 
         if (dr_q1<distR && dr_q2<distR){
+          getResult().particles.push_back(wdaus.at(0));
+          getResult().particles.push_back(wdaus.at(1));
           if (pdgid_q1 >= ParticleID::p_c || pdgid_q2 >= ParticleID::p_c) {
-            return std::make_pair(FatJetLabel::Top_bcq, top_v);
+            getResult().label = "Top_bWcs";
           }
           else {
-            return std::make_pair(FatJetLabel::Top_bqq, top_v);
+            getResult().label = "Top_bWqq";
           }
+          return;
         }else if (dr_q1<distR && dr_q2>=distR){
+          getResult().particles.push_back(wdaus.at(0)); // only push the particle within the jet
           if (pdgid_q1 >= ParticleID::p_c){
-            return std::make_pair(FatJetLabel::Top_bc, top_v);
+            getResult().label = "Top_bWc";
+          }else if (pdgid_q1 == ParticleID::p_s){
+            getResult().label = "Top_bWs";
           }else{
-            return std::make_pair(FatJetLabel::Top_bq, top_v);
+            getResult().label = "Top_bWq";
           }
+          return;
         }
       }else{
         // test for W if dr(b, jet) > distR
-        return w_label(jet, w_from_top, genParticles, distR);
+        w_label(jet, w_from_top, distR, /*is_from_top=*/ true);
+        return;
       }
     }
   } else {
@@ -474,32 +333,53 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
       cout << "deltaR(jet, b)     : " << dr_b << endl;
       cout << "deltaR(jet, l)     : " << dr_l << endl;
       cout << "pdgid(l)           : " << lep->pdgId() << endl;
+      if (!tau_daus.empty()) {
+        cout << "delta(jet, tau-daus) : " << reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) << endl;
+        cout << "pdgid(tau-daus)      : " << tau_daus.at(0)->pdgId() << endl;
+      }
     }
 
     if (dr_b < distR){
-      if ((wdecay == W_ev || wdecay == W_mv || wdecay == W_hadtauv) && dr_l < distR) {
-        if (wdecay == W_ev) return std::make_pair(FatJetLabel::Top_bev, top_v);
-        else if (wdecay == W_mv) return std::make_pair(FatJetLabel::Top_bmv, top_v);
-        else if (wdecay == W_hadtauv) return std::make_pair(FatJetLabel::Top_bhadtauv, top_v);
+      getResult().particles.push_back(b_from_top);
+      if ((wdecay == W_ev || wdecay == W_mv || wdecay == W_tauhv) && dr_l < distR) {
+        if (wdecay == W_ev) {
+          getResult().label = "Top_bWev";
+          getResult().particles.push_back(lep);
+        }
+        else if (wdecay == W_mv) {
+          getResult().label = "Top_bWmv";
+          getResult().particles.push_back(lep);
+        }
+        else if (wdecay == W_tauhv) {
+          getResult().label = "Top_bWtauhv";
+          // push only visable tau daughters (exclude tau neutrino anyway)
+          getResult().particles.insert(getResult().particles.end(), tau_daus.begin(), tau_daus.end());
+        }
+        return;
       }
-      if ((wdecay == W_leptauev || wdecay == W_leptaumv) && reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) < distR) {
-        if (wdecay == W_leptauev) return std::make_pair(FatJetLabel::Top_bleptauev, top_v);
-        else if (wdecay == W_leptaumv) return std::make_pair(FatJetLabel::Top_bleptaumv, top_v);
+      if ((wdecay == W_tauev || wdecay == W_taumv) && reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) < distR) {
+        if (wdecay == W_tauev)  getResult().label = "Top_bWtauev";
+        else if (wdecay == W_taumv)  getResult().label = "Top_bWtaumv";
+        getResult().particles.push_back(tau_daus.at(0));
+        return;
       }
     } else {
       // test for W if dr(b, jet) > distR
-      return w_label(jet, w_from_top, genParticles, distR);
+      w_label(jet, w_from_top, distR, /*is_from_top=*/ true);
+      return;
     }
   }
 
-  return std::make_pair(FatJetLabel::Invalid, empty_v);
-
 }
 
-std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > FatJetMatching::w_label(const pat::Jet* jet, const reco::GenParticle *parton, const reco::GenParticleCollection& genParticles, double distR)
+void FatJetMatching::w_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR, bool is_from_top)
 {
 
   auto w = getFinal(parton);
+  if (!is_from_top) {
+    // if the function is not called from the top matching, push the W to genparts
+    getResult().resParticles.push_back(w);
+  }
   std::vector<const reco::GenParticle*> w_v = {w}, empty_v = {};
   if (debug_){
     using namespace std;
@@ -508,7 +388,7 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   }
 
   // detect W decay mode
-  enum WDecay {W_cq, W_qq, W_ev, W_mv, W_leptauev, W_leptaumv, W_hadtauv, W_null};
+  enum WDecay {W_cs, W_qq, W_ev, W_mv, W_tauev, W_taumv, W_tauhv, W_null};
   WDecay wdecay = W_null;
   std::vector<const reco::GenParticle*> tau_daus;
   auto wdaus = getDaughters(w);
@@ -518,111 +398,85 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   else if (pdgid_0 == ParticleID::p_tauminus){
     auto tau_daus_info = getTauDaughters(wdaus.at(0));
     tau_daus = tau_daus_info.first;
-    if (tau_daus_info.second == 0)  wdecay = W_leptauev;
-    else if (tau_daus_info.second == 1)  wdecay = W_leptaumv;
-    else if (tau_daus_info.second == 2)  wdecay = W_hadtauv;
+    if (tau_daus_info.second == 0)  wdecay = W_tauev;
+    else if (tau_daus_info.second == 1)  wdecay = W_taumv;
+    else if (tau_daus_info.second == 2)  wdecay = W_tauhv;
   }
   else { // hadronic decay
     if (std::abs(wdaus.at(0)->pdgId()) == ParticleID::p_c || std::abs(wdaus.at(1)->pdgId()) == ParticleID::p_c){
-      wdecay = W_cq;
+      wdecay = W_cs;
     }
     else wdecay = W_qq;
   }
 
-  // invalid cases when decayed product to not match to jets
-  if ((wdecay == W_ev || wdecay == W_mv || wdecay == W_hadtauv) && reco::deltaR(jet->p4(), wdaus.at(0)->p4()) >= distR){
-    return std::make_pair(FatJetLabel::Invalid, empty_v); 
-  }
-  if ((wdecay == W_leptauev || wdecay == W_leptaumv) && reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) >= distR){
-    return std::make_pair(FatJetLabel::Invalid, empty_v); 
-  }
-  if ((wdecay == W_cq || wdecay == W_qq) && (reco::deltaR(jet->p4(), wdaus.at(0)->p4()) >= distR || reco::deltaR(jet->p4(), wdaus.at(1)->p4()) >= distR)){
-    return std::make_pair(FatJetLabel::Invalid, empty_v); 
-  }
-
-  // comment out code for finding additional b/c-hadrons
-  /*
-  // now we find a valid W jets. Next step is to see if additional b/c-hadrons fall into the jet
-  enum WMatchQuark {match_b, match_c, match_none};
-  WMatchQuark wmatchq = match_none;
-  reco::GenParticleRefVector hadrons;
-  for (int icheck = 0; icheck <= 1; ++icheck) {
-    if (icheck == 0) hadrons = jet->jetFlavourInfo().getbHadrons();
-    else             hadrons = jet->jetFlavourInfo().getcHadrons();
-
-    for(reco::GenParticleRefVector::const_iterator it = hadrons.begin(); it != hadrons.end(); ++it){
-      if (reco::deltaR(jet->p4(), (*it)->p4()) < distR){
-        // find the corresponding hadrons in the genParticle list
-        const reco::GenParticle* had_from_gp = nullptr;
-        for (const auto & gp: genParticles){
-          if ((*it)->pdgId() == gp.pdgId() && std::abs((*it)->pt() - gp.pt())/gp.pt() <= 1e-5 && std::abs((*it)->eta() - gp.eta())/gp.eta() <= 1e-5){
-            had_from_gp = &gp;
-            if (debug_){
-              std::cout << "find hadron: "; printGenParticleInfo(&gp, -1);
-            }
-          }
-        }
-        if (!had_from_gp) continue;
-
-        auto ances = getHeavyHadronAncestor(had_from_gp);
-        if (ances){
-          if (debug_){
-            std::cout << "match ances: "; printGenParticleInfo(ances, -1);
-          }
-          if (std::abs(ances->pdgId()) == ParticleID::p_proton){
-            // std::cout << "=================" << std::endl;
-            // std::cout << "match ances: "; printGenParticleInfo(ances, -1);
-            // std::cout << "hadron: "; printGenParticleInfo(had_from_gp, -1);
-            // std::cout << "*****************" << std::endl;
-            // for (unsigned ipart = 0; ipart<genParticles.size(); ++ipart){
-            //   printGenParticleInfo(&genParticles[ipart], ipart);
-            // }
-            if (icheck == 0)  wmatchq = match_b;
-            else              wmatchq = match_c;
-          }
-        }
-      }
+  if (debug_){
+    using namespace std;
+    cout << "deltaR(jet, W-dau1)    : " << reco::deltaR(jet->p4(), wdaus.at(0)->p4()) << endl;
+    cout << "pdgid(W-dau1)          : " << wdaus.at(0)->pdgId() << endl;
+    if (wdaus.size() > 1) {
+      cout << "deltaR(jet, W-dau2)    : " << reco::deltaR(jet->p4(), wdaus.at(1)->p4()) << endl;
+      cout << "pdgid(W-dau2)          : " << wdaus.at(1)->pdgId() << endl;
     }
-    if (wmatchq == match_b) break; // if find an additional b, stop finding c
+    if (!tau_daus.empty()) {
+      cout << "deltaR(jet, tau-daus)  : " << reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) << endl;
+      cout << "pdgid(tau-daus)        : " << tau_daus.at(0)->pdgId() << endl;
+    }
   }
 
-  if (wmatchq == match_b) {
-    if (wdecay == W_cq)  return std::make_pair(FatJetLabel::W_cq_b, w_v);
-    else if (wdecay == W_qq)  return std::make_pair(FatJetLabel::W_qq_b, w_v);
-    else if (wdecay == W_ev)  return std::make_pair(FatJetLabel::W_ev_b, w_v);
-    else if (wdecay == W_mv)  return std::make_pair(FatJetLabel::W_mv_b, w_v);
-    else if (wdecay == W_leptauev)  return std::make_pair(FatJetLabel::W_leptauev_b, w_v);
-    else if (wdecay == W_leptaumv)  return std::make_pair(FatJetLabel::W_leptaumv_b, w_v);
-    else if (wdecay == W_hadtauv)  return std::make_pair(FatJetLabel::W_hadtauv_b, w_v);
+  // invalid cases when decayed product to not match to jets
+  if ((wdecay == W_ev || wdecay == W_mv || wdecay == W_tauhv) && reco::deltaR(jet->p4(), wdaus.at(0)->p4()) >= distR){
+    getResult().label = "Invalid";
+    return;
   }
-  if (wmatchq == match_c) {
-    if (wdecay == W_cq)  return std::make_pair(FatJetLabel::W_cq_c, w_v);
-    else if (wdecay == W_qq)  return std::make_pair(FatJetLabel::W_qq_c, w_v);
-    else if (wdecay == W_ev)  return std::make_pair(FatJetLabel::W_ev_c, w_v);
-    else if (wdecay == W_mv)  return std::make_pair(FatJetLabel::W_mv_c, w_v);
-    else if (wdecay == W_leptauev)  return std::make_pair(FatJetLabel::W_leptauev_c, w_v);
-    else if (wdecay == W_leptaumv)  return std::make_pair(FatJetLabel::W_leptaumv_c, w_v);
-    else if (wdecay == W_hadtauv)  return std::make_pair(FatJetLabel::W_hadtauv_c, w_v);
+  if ((wdecay == W_tauev || wdecay == W_taumv) && reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) >= distR){
+    getResult().label = "Invalid";
+    return; 
   }
-  else */
-  {
-    if (wdecay == W_cq)  return std::make_pair(FatJetLabel::W_cq, w_v);
-    else if (wdecay == W_qq)  return std::make_pair(FatJetLabel::W_qq, w_v);
-    else if (wdecay == W_ev)  return std::make_pair(FatJetLabel::W_ev, w_v);
-    else if (wdecay == W_mv)  return std::make_pair(FatJetLabel::W_mv, w_v);
-    else if (wdecay == W_leptauev)  return std::make_pair(FatJetLabel::W_leptauev, w_v);
-    else if (wdecay == W_leptaumv)  return std::make_pair(FatJetLabel::W_leptaumv, w_v);
-    else if (wdecay == W_hadtauv)  return std::make_pair(FatJetLabel::W_hadtauv, w_v);
+  if ((wdecay == W_cs || wdecay == W_qq) && (reco::deltaR(jet->p4(), wdaus.at(0)->p4()) >= distR || reco::deltaR(jet->p4(), wdaus.at(1)->p4()) >= distR)){
+    getResult().label = "Invalid";
+    return;
   }
-  return std::make_pair(FatJetLabel::Invalid, empty_v);
 
+  // designate labels depending on whether it's called from the top label function
+  if (!is_from_top) {
+    if (wdecay == W_cs)  getResult().label = "W_cs";
+    else if (wdecay == W_qq)  getResult().label = "W_qq";
+    else if (wdecay == W_ev)  getResult().label = "W_ev";
+    else if (wdecay == W_mv)  getResult().label = "W_mv";
+    else if (wdecay == W_tauev)  getResult().label = "W_tauev";
+    else if (wdecay == W_taumv)  getResult().label = "W_taumv";
+    else if (wdecay == W_tauhv)  getResult().label = "W_tauhv";
+  }
+  else {
+    if (wdecay == W_cs)  getResult().label = "Top_Wcs";
+    else if (wdecay == W_qq)  getResult().label = "Top_Wqq";
+    else if (wdecay == W_ev)  getResult().label = "Top_Wev";
+    else if (wdecay == W_mv)  getResult().label = "Top_Wmv";
+    else if (wdecay == W_tauev)  getResult().label = "Top_Wtauev";
+    else if (wdecay == W_taumv)  getResult().label = "Top_Wtaumv";
+    else if (wdecay == W_tauhv)  getResult().label = "Top_Wtauhv";
+  }
+  // push gen particles of W decay products
+  if (wdecay == W_cs || wdecay == W_qq){
+    getResult().particles.push_back(wdaus.at(0));
+    getResult().particles.push_back(wdaus.at(1));
+  }
+  else if (wdecay == W_ev || wdecay == W_mv){
+    getResult().particles.push_back(wdaus.at(0));
+  }
+  else if (wdecay == W_tauev || wdecay == W_taumv){
+    getResult().particles.push_back(tau_daus.at(0));
+  }
+  else if (wdecay == W_tauhv){
+    getResult().particles.insert(getResult().particles.end(), tau_daus.begin(), tau_daus.end());
+  }
 }
 
-std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > FatJetMatching::z_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
+void FatJetMatching::z_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
 {
 
   auto z = getFinal(parton);
-  std::vector<const reco::GenParticle*> z_v = {z}, empty_v = {};
+  getResult().resParticles.push_back(z);
   if (isHadronic(z)) {
     if (debug_){
       using namespace std;
@@ -653,26 +507,30 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
       }
 
       if (dr_q1<distR && dr_q2<distR){
+        // both quarks are matched
+        getResult().particles.push_back(zdaus.at(0));
+        getResult().particles.push_back(zdaus.at(1));
+
         if (pdgid_q1 == ParticleID::p_b && pdgid_q2 == ParticleID::p_b) {
-          return std::make_pair(FatJetLabel::Z_bb, z_v);
+          getResult().label = "Z_bb";
         }else if (pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_c) {
-          return std::make_pair(FatJetLabel::Z_cc, z_v);
+          getResult().label = "Z_cc";
+        }else if (pdgid_q1 == ParticleID::p_s && pdgid_q2 == ParticleID::p_s) {
+          getResult().label = "Z_ss";
         }else {
-          return std::make_pair(FatJetLabel::Z_qq, z_v);
+          getResult().label = "Z_qq";
         }
       }
     }
   }
 
-  return std::make_pair(FatJetLabel::Invalid, empty_v);
-
 }
 
-std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > FatJetMatching::higgs_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
+void FatJetMatching::higgs_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
 {
 
   auto higgs = getFinal(parton);
-  std::vector<const reco::GenParticle*> higgs_v = {higgs}, empty_v = {};
+  getResult().resParticles.push_back(higgs);
 
   if (debug_){
     using namespace std;
@@ -680,213 +538,80 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
     cout << "H:   "; printGenParticleInfo(higgs, -1);
   }
 
-  bool is_hVV = false;
+  enum HDecay {h_2p, h_tautau, h_WW, h_ZZ, h_null};
+  HDecay hdecay = h_null;
+  auto hdaus = getDaughters(higgs);
   if (higgs->numberOfDaughters() >= 3) {
     // e.g., h->Vqq or h->qqqq
-    is_hVV = true;
+    throw std::runtime_error("[FatJetMatching::higgs_label] H decays to 3/4 objects: not implemented");
   }else {
-    // e.g., h->VV*
-    for (const auto &p : higgs->daughterRefVector()){
-      auto pdgid = std::abs(p->pdgId());
-      if (pdgid == ParticleID::p_Wplus || pdgid == ParticleID::p_Z0){
-        is_hVV = true;
-        break;
-      }
+    auto pdgid = std::abs(hdaus.at(0)->pdgId());
+    if (pdgid == ParticleID::p_Wplus) {
+      hdecay = h_WW;
+    }else if (pdgid == ParticleID::p_Z0) {
+      hdecay = h_ZZ;
+    }else if (pdgid == ParticleID::p_tauminus) {
+      hdecay = h_tautau;
+    }else {
+      hdecay = h_2p;
     }
   }
 
-  if (is_hVV){
+  if (hdecay == h_WW || hdecay == h_ZZ){
     // h->WW or h->ZZ
+    enum VMode {v_had, v_lep, v_null};
+    VMode hVV_modes[2] = {v_null, v_null};
     std::vector<const reco::GenParticle*> hVV_daus;
-    int n_el = 0, n_mu = 0, n_tau = 0, n_quarks = 0;
-    bool is_lhe_hvv = false;
-    // determine the decay channel according to the higgs daughters
+    // found daughters of WW or ZZ, and determine the W/Z decay (had or lep),
+    // then switch order to make sure had daughters go first
     for (unsigned idau=0; idau<higgs->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(higgs->daughter(idau));
-      auto pdgid = std::abs(higgs->daughter(idau)->pdgId());
-      if (pdgid >= ParticleID::p_d && pdgid <= ParticleID::p_b) {
-        ++n_quarks;
-        hVV_daus.push_back(dau);
-      }else if (pdgid >= ParticleID::p_eminus && pdgid <= ParticleID::p_nu_tau){
-        if (pdgid == ParticleID::p_eminus) ++n_el;
-        else if (pdgid == ParticleID::p_muminus) ++n_mu;
-        else if (pdgid == ParticleID::p_tauminus) ++n_tau;
-        hVV_daus.push_back(dau);
-      }else{
-        // const auto d = getDaughterQuarks(getFinal(dau));
-        // hVV_daus.insert(hVV_daus.end(), d.begin(), d.end());
-        higgs_v.push_back(dau); // also store the gen W from Higgs
-        is_lhe_hvv = true;
-        auto daufinal = getFinal(dau);
-        for (unsigned j=0; j<daufinal->numberOfDaughters(); ++j){
-          const auto *ddau = dynamic_cast<const reco::GenParticle*>(daufinal->daughter(j));
+      auto daufinal = getFinal(dau);
+      getResult().resParticles.push_back(daufinal); // push the Z or W to the list
+
+      for (unsigned j=0; j<daufinal->numberOfDaughters(); ++j){
+        const auto *ddau = dynamic_cast<const reco::GenParticle*>(daufinal->daughter(j));
+        // determine the V decay mode
+        if (j == 0) {
           auto dpdgid = std::abs(ddau->pdgId());
-          if (dpdgid >= ParticleID::p_d && dpdgid <= ParticleID::p_b){
-            ++n_quarks;
-            hVV_daus.push_back(ddau);
-          }else if (dpdgid >= ParticleID::p_eminus && dpdgid <= ParticleID::p_nu_tau){
-            if (dpdgid == ParticleID::p_eminus) ++n_el;
-            else if (dpdgid == ParticleID::p_muminus) ++n_mu;
-            else if (dpdgid == ParticleID::p_tauminus) ++n_tau;
-            hVV_daus.push_back(ddau);
-          }
+          if (dpdgid >= ParticleID::p_d && dpdgid <= ParticleID::p_b)  hVV_modes[idau] = v_had;
+          else  hVV_modes[idau] = v_lep;
         }
+        hVV_daus.push_back(ddau);
       }
     }
-    auto is_neutrino = [&](int pdgid){
-      pdgid = std::abs(pdgid);
-      return pdgid == ParticleID::p_nu_e || pdgid == ParticleID::p_nu_mu || pdgid == ParticleID::p_nu_tau;
-    };
-    // auto printDaus = [&](std::vector<const reco::GenParticle*>& parts, const pat::Jet* jet){
-    //   using namespace std;
-    //   cout << "Found " << parts.size() << " quarks from Higgs decay" << endl;
-    //   for (const auto * gp : parts){
-    //     using namespace std;
-    //     printGenParticleInfo(gp, -1);
-    //     cout << " ... dR(q, jet) = " << reco::deltaR(*gp, *jet) << endl;
-    //   }
-    // };
-    // if four daughters are all quarks
-    if (n_quarks == 4){
-      int n_daus_in_jet = 0, n_charms = 0, idx = 0;
-      std::vector<int> idx_daus_in_jet;
-      for (const auto *gp : hVV_daus){
-        auto dr = reco::deltaR(*gp, *jet);
-        if (dr < distR){
-          ++n_daus_in_jet;
-          idx_daus_in_jet.push_back(idx);
-          if (std::abs(gp->pdgId()) == ParticleID::p_c){
-            ++n_charms;
-          }
-        }
-        ++idx;
-      }
-      if (n_daus_in_jet == 4){
-        if (n_charms == 2){
-          return std::make_pair(FatJetLabel::H_ww4q_2c, higgs_v);
-        }else if (n_charms == 1){
-          return std::make_pair(FatJetLabel::H_ww4q_1c, higgs_v);
-        }else if (n_charms == 0){
-          return std::make_pair(FatJetLabel::H_ww4q_0c, higgs_v);
-        }
-      }else if (n_daus_in_jet == 3){
-        if (n_charms == 2){
-          return std::make_pair(FatJetLabel::H_ww3q_2c, higgs_v);
-        }else if (n_charms == 1){
-          return std::make_pair(FatJetLabel::H_ww3q_1c, higgs_v);
-        }else if (n_charms == 0){
-          return std::make_pair(FatJetLabel::H_ww3q_0c, higgs_v);
-        }
-      }else if (n_daus_in_jet >= 2 && is_lhe_hvv){
-        if (idx_daus_in_jet == std::vector<int>({0,1}) || idx_daus_in_jet == std::vector<int>({2,3})){
-          // std::cout << "2q from same W!" << std::endl;
-          return std::make_pair(FatJetLabel::H_ww2qsame, higgs_v);
-        }else {
-          // std::cout << "2q from separate Ws!" << std::endl;
-          return std::make_pair(FatJetLabel::H_ww2qsep, higgs_v);
-        }
-      }
-    }else if (n_quarks == 2 && n_tau == 0) { // lvqq
-      int n_daus_in_jet = 0, n_charms = 0;
-      for (const auto *gp : hVV_daus){
-        if (is_neutrino(gp->pdgId())){
-          continue;
-        }
-        auto dr = reco::deltaR(*gp, *jet);
-        if (dr < distR){
-          ++n_daus_in_jet;
-          if (std::abs(gp->pdgId()) == ParticleID::p_c){
-            ++n_charms;
-          }
-        }
-      }
-      if (n_daus_in_jet >= 3){
-        // std::cout << "lvqq!" << std::endl;
-        if (n_el > 0){
-          if (n_charms == 1){
-            return std::make_pair(FatJetLabel::H_wwevqq_1c, higgs_v);
-          }else if (n_charms == 0){
-            return std::make_pair(FatJetLabel::H_wwevqq_0c, higgs_v);
-          }
-        }else if (n_mu > 0){
-          if (n_charms == 1){
-            return std::make_pair(FatJetLabel::H_wwmvqq_1c, higgs_v);
-          }else if (n_charms == 0){
-            return std::make_pair(FatJetLabel::H_wwmvqq_0c, higgs_v);
-          }
-        }
-      }
-    }else if (n_quarks == 2 && n_tau == 1) { // tauvqq
-      int tau_pos = 0;
-      int n_daus_in_jet = 0, n_charms = 0;
-      for(std::size_t igp = 0; igp < hVV_daus.size(); ++igp) {
-        auto gp = hVV_daus[igp];
-        if (is_neutrino(gp->pdgId())){
-          continue;
-        }
-        if (std::abs(gp->pdgId()) == ParticleID::p_tauminus){
-          tau_pos = igp;
-          continue;
-        }
-        auto dr = reco::deltaR(*gp, *jet);
-        if (dr < distR){
-          ++n_daus_in_jet;
-          if (std::abs(gp->pdgId()) == ParticleID::p_c){
-            ++n_charms;
-          }
-        }
-      }
-      auto tau_daus_info = getTauDaughters(hVV_daus[tau_pos]);
-      auto tau_daus = tau_daus_info.first;
-      int tau_decay = tau_daus_info.second;
-      auto tau = getFinal(hVV_daus[tau_pos]);
-      if (n_daus_in_jet >= 2){ // both two quarks are in
-        if ((tau_decay == 0 || tau_decay == 1) && reco::deltaR(tau_daus.at(0)->p4(), jet->p4()) < distR){ // tau to e/mu
-          if (tau_decay == 0){
-            if (n_charms == 1) return std::make_pair(FatJetLabel::H_wwleptauevqq_1c, higgs_v);
-            else if (n_charms == 0) return std::make_pair(FatJetLabel::H_wwleptauevqq_0c, higgs_v);
-          }else {
-            if (n_charms == 1) return std::make_pair(FatJetLabel::H_wwleptaumvqq_1c, higgs_v);
-            else if (n_charms == 0) return std::make_pair(FatJetLabel::H_wwleptaumvqq_0c, higgs_v);
-          }
-        }
-        if (tau_decay == 2 && reco::deltaR(tau->p4(), jet->p4()) < distR){ // hadronic taus
-          if (n_charms == 1) return std::make_pair(FatJetLabel::H_wwhadtauvqq_1c, higgs_v);
-          else if (n_charms == 0) return std::make_pair(FatJetLabel::H_wwhadtauvqq_0c, higgs_v);
-        }
-      }
-    }else {
-      // std::cout << "**undefined!" << std::endl;
-      return std::make_pair(FatJetLabel::Invalid, empty_v);
+    if (hVV_modes[0] == v_lep && hVV_modes[1] == v_lep) {
+      // require not both V are leptonic
+      return;
     }
-    // std::cout << "**unmatch!" << std::endl;
-    return std::make_pair(FatJetLabel::Invalid, empty_v);
+    else if (hVV_modes[0] == v_lep && hVV_modes[1] == v_had) {
+      // hadronic V goes first
+      std::swap(hVV_daus.at(0), hVV_daus.at(2));
+      std::swap(hVV_daus.at(1), hVV_daus.at(3));
+      hVV_modes[0] = v_had;
+      hVV_modes[1] = v_lep;
+    }
 
-    // if (debug_){
-    //   using namespace std;
-    //   cout << "Found " << hVV_daus.size() << " quarks from Higgs decay" << endl;
-    //   for (const auto * gp : hVV_daus){
-    //     using namespace std;
-    //     printGenParticleInfo(gp, -1);
-    //     cout << " ... dR(q, jet) = " << reco::deltaR(*gp, *jet) << endl;
-    //   }
-    // }
+    // let e/mu/tau appears before neutrinos
+    if (hVV_modes[1] == v_lep) {
+      auto pdgid = std::abs(hVV_daus.at(2)->pdgId());
+      if (pdgid == ParticleID::p_nu_e || pdgid == ParticleID::p_nu_mu || pdgid == ParticleID::p_nu_tau) {
+        std::swap(hVV_daus.at(2), hVV_daus.at(3));
+      }
+    }
 
-    // unsigned n_quarks_in_jet = 0;
-    // for (const auto *gp : hVV_daus){
-    //   auto dr = reco::deltaR(*gp, *jet);
-    //   if (dr < distR){
-    //     ++n_quarks_in_jet;
-    //   }
-    // }
-    // if (n_quarks_in_jet >= 4){
-    //   return std::make_pair(FatJetLabel::H_qqqq, higgs);
-    // }
+    // go to dedicated HWW and HZZ label functions
+    // result.resParticles is completed; result.label and result.particles to be assigned inside those functions
+    if (hdecay == h_WW) {
+      higgs_WW_label(jet, hVV_daus, distR);
+    }else if (hdecay == h_ZZ) {
+      higgs_ZZ_label(jet, hVV_daus, distR);
+    }
+    return;
 
-  }else if (isHadronic(higgs)) {
+  }else if (hdecay == h_2p) {
     // direct h->qq
 
-    auto hdaus = getDaughterQuarks(higgs);
     if (hdaus.size() < 2) throw std::logic_error("[FatJetMatching::higgs_label] Higgs decay has less than 2 quarks!");
 //    if (zdaus.size() >= 2)
     {
@@ -909,67 +634,385 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
       }
 
       if (dr_q1<distR && dr_q2<distR){
+        getResult().particles.push_back(hdaus.at(0));
+        getResult().particles.push_back(hdaus.at(1));
+
         if (pdgid_q1 == ParticleID::p_b && pdgid_q2 == ParticleID::p_b) {
-          return std::make_pair(FatJetLabel::H_bb, higgs_v);
+          getResult().label = "H_bb";
         }else if (pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_c) {
-          return std::make_pair(FatJetLabel::H_cc, higgs_v);
+          getResult().label = "H_cc";
         }else if (pdgid_q1 == ParticleID::p_s && pdgid_q2 == ParticleID::p_s) {
-          return std::make_pair(FatJetLabel::H_ss, higgs_v);
-        }else {
-          return std::make_pair(FatJetLabel::H_qq, higgs_v);
+          getResult().label = "H_ss";
+        }else if ((pdgid_q1 == ParticleID::p_u && pdgid_q2 == ParticleID::p_u) || (pdgid_q1 == ParticleID::p_d && pdgid_q2 == ParticleID::p_d)) {
+          getResult().label = "H_qq";
+        }else if ((pdgid_q1 == ParticleID::p_b && pdgid_q2 == ParticleID::p_c) || (pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_b)) {
+          getResult().label = "H_bc";
+        }else if ((pdgid_q1 == ParticleID::p_b && pdgid_q2 == ParticleID::p_s) || (pdgid_q1 == ParticleID::p_s && pdgid_q2 == ParticleID::p_b)) {
+          getResult().label = "H_bs";
+        }else if ((pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_s) || (pdgid_q1 == ParticleID::p_s && pdgid_q2 == ParticleID::p_c)) {
+          getResult().label = "H_cs";
+        }else if (pdgid_q1 == ParticleID::p_g && pdgid_q2 == ParticleID::p_g) {
+          getResult().label = "H_gg";
+        }else if (pdgid_q1 == ParticleID::p_eminus && pdgid_q2 == ParticleID::p_eminus) {
+          getResult().label = "H_ee";
+        }else if (pdgid_q1 == ParticleID::p_muminus && pdgid_q2 == ParticleID::p_muminus) {
+          getResult().label = "H_mm";
         }
       }
+      return;
     }
-  }else {
-    // test h->tautau
-    std::vector<const reco::GenParticle*> taus;
-    for (unsigned i=0; i<higgs->numberOfDaughters(); ++i){
-      const auto *dau = dynamic_cast<const reco::GenParticle*>(higgs->daughter(i));
-      if (std::abs(dau->pdgId()) == ParticleID::p_tauminus){
-        taus.push_back(dau);
-      }
-    }
-    if (taus.size() == 2){
+  }else if (hdecay == h_tautau) {
+    if (hdaus.size() == 2){
       // higgs -> tautau
       // use first version or last version of the tau in dr?
-      double dr_tau1    = reco::deltaR(jet->p4(), taus.at(0)->p4());
-      double dr_tau2    = reco::deltaR(jet->p4(), taus.at(1)->p4());
+      double dr_tau1    = reco::deltaR(jet->p4(), hdaus.at(0)->p4());
+      double dr_tau2    = reco::deltaR(jet->p4(), hdaus.at(1)->p4());
+
+      auto tau1_daus_info = getTauDaughters(hdaus.at(0));
+      auto tau2_daus_info = getTauDaughters(hdaus.at(1));
 
       if (debug_){
         using namespace std;
+        cout << "tau1 decay ID: " << tau1_daus_info.second << endl;
+        cout << "tau2 decay ID: " << tau2_daus_info.second << endl;
         cout << "deltaR(jet, tau1)    : " << dr_tau1 << endl;
+        cout << "deltaR(jet, tau1-dau): " << reco::deltaR(tau1_daus_info.first.at(0)->p4(), jet->p4()) << endl;
         cout << "deltaR(jet, tau2)    : " << dr_tau2 << endl;
+        cout << "deltaR(jet, tau2-dau): " << reco::deltaR(tau2_daus_info.first.at(0)->p4(), jet->p4()) << endl;
       }
 
-      auto tau1_daus_info = getTauDaughters(taus.at(0));
-      auto tau2_daus_info = getTauDaughters(taus.at(1));
-
-      // let hadronic tau be the last
-      if (tau1_daus_info.second == 2 && tau2_daus_info.second < 2){
+      // let hadronic tau be the first one
+      if (tau1_daus_info.second < 2 && tau2_daus_info.second == 2){
         std::swap(dr_tau1, dr_tau2);
+        std::swap(hdaus.at(0), hdaus.at(1));
         std::swap(tau1_daus_info, tau2_daus_info);
       }
-      if (tau2_daus_info.second == 2 && dr_tau2 < distR){
-        if (tau1_daus_info.second == 0 && reco::deltaR(tau1_daus_info.first.at(0)->p4(), jet->p4()) < distR){
-          return std::make_pair(FatJetLabel::H_leptauehadtau, higgs_v);
-        }else if (tau1_daus_info.second == 1 && reco::deltaR(tau1_daus_info.first.at(0)->p4(), jet->p4()) < distR){
-          return std::make_pair(FatJetLabel::H_leptaumhadtau, higgs_v);
-        }else if (tau1_daus_info.second == 2 && dr_tau1 < distR){
-          return std::make_pair(FatJetLabel::H_hadtauhadtau, higgs_v);
+      // the first tau must be hadronic
+      if (tau1_daus_info.second == 2 && dr_tau1 < distR){
+        // push the first tauh
+        getResult().particles.insert(getResult().particles.end(), tau1_daus_info.first.begin(), tau1_daus_info.first.end());
+
+        // inspect the second tau
+        if ((tau2_daus_info.second == 0 || tau2_daus_info.second == 1) && reco::deltaR(tau2_daus_info.first.at(0)->p4(), jet->p4()) < distR){
+          getResult().particles.push_back(tau2_daus_info.first.at(0));
+          if (tau2_daus_info.second == 0) {
+            getResult().label = "H_tauhtaue";
+          }else {
+            getResult().label = "H_tauhtaum";
+          }
+        }else if (tau2_daus_info.second == 2 && dr_tau2 < distR){
+          getResult().particles.insert(getResult().particles.end(), tau2_daus_info.first.begin(), tau2_daus_info.first.end());
+          getResult().label = "H_tauhtauh";
+        }
+      }
+      return;
+    }
+  }
+}
+
+void FatJetMatching::higgs_WW_label(const pat::Jet* jet, std::vector<const reco::GenParticle*>& hVV_daughters, double distR)
+{
+  enum WDecay {W_cs, W_qq, W_ev, W_mv, W_tauev, W_taumv, W_tauhv, W_null};
+
+  // determine the decay mode of two Ws
+  WDecay wsdecay[2] = {W_null, W_null};
+  int daus_matched[4] = {0, 0, 0, 0};
+  for (int i=0; i<2; ++i) {
+    const reco::GenParticle* daus[2] = {hVV_daughters.at(i*2), hVV_daughters.at(i*2+1)};
+
+    if (std::abs(daus[0]->pdgId()) >= ParticleID::p_d && std::abs(daus[0]->pdgId()) <= ParticleID::p_b) {
+      // W->qq
+      if (std::abs(daus[0]->pdgId()) == ParticleID::p_c || std::abs(daus[1]->pdgId()) == ParticleID::p_c) {
+        wsdecay[i] = W_cs;
+        // the c quark goes first
+        if (std::abs(daus[0]->pdgId()) != ParticleID::p_c) {
+          std::swap(daus[0], daus[1]);
+        }
+      }
+      else {
+        wsdecay[i] = W_qq;
+      }
+
+      // check if the quarks are matched to the jet
+      for (int j=0; j<2; ++j) {
+        if (reco::deltaR(jet->p4(), daus[j]->p4()) < distR) {
+          daus_matched[i*2+j] = 1;
+          getResult().particles.push_back(daus[j]);
+        }
+      }
+    }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_eminus) {
+      wsdecay[i] = W_ev;
+      if (reco::deltaR(jet->p4(), daus[0]->p4()) < distR) {
+        daus_matched[i*2] = 1;
+        getResult().particles.push_back(daus[0]);
+      }
+    }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_muminus) {
+      wsdecay[i] = W_mv;
+      if (reco::deltaR(jet->p4(), daus[0]->p4()) < distR) {
+        daus_matched[i*2] = 1;
+        getResult().particles.push_back(daus[0]);
+      }
+    }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_tauminus) {
+      auto tau_daus_info = getTauDaughters(daus[0]);
+      auto tau_daus = tau_daus_info.first;
+      int tau_decay = tau_daus_info.second;
+      if (tau_decay == 0)
+        wsdecay[i] = W_tauev;
+      else if (tau_decay == 1)
+        wsdecay[i] = W_taumv;
+      else
+        wsdecay[i] = W_tauhv;
+
+      // check if the tau (or daughter e/mu, if leptonic decay) is matched to the jet
+      if ((tau_decay == 0 || tau_decay == 1) && reco::deltaR(jet->p4(), tau_daus.at(0)->p4()) < distR) {
+        daus_matched[i*2] = 1;
+        getResult().particles.push_back(tau_daus.at(0));
+      }else if (tau_decay == 2 && reco::deltaR(jet->p4(), daus[0]->p4()) < distR) {
+        daus_matched[i*2] = 1;
+        getResult().particles.insert(getResult().particles.end(), tau_daus.begin(), tau_daus.end());
+      }
+    }
+
+    if (debug_){
+      using namespace std;
+      cout << "W_" << i+1 << " decay mode  :" << wsdecay[i] << endl;
+      cout <<  "  pdgid(dau1)   : " << daus[0]->pdgId() << endl;
+      cout <<  "  pdgid(dau2)   : " << daus[1]->pdgId() << endl;
+      cout <<  "  deltaR(jet, dau1)  : " << reco::deltaR(jet->p4(), daus[0]->p4()) << "  dau/tau-dau is matched: " << daus_matched[i*2] << endl;
+      cout <<  "  deltaR(jet, dau2)  : " << reco::deltaR(jet->p4(), daus[1]->p4()) << "  dau/tau-dau is matched: " << daus_matched[i*2+1] << endl;
+      if (wsdecay[i] == W_tauev || wsdecay[i] == W_taumv || wsdecay[i] == W_tauhv) {
+        auto tau_daus_info = getTauDaughters(daus[0]);
+        auto tau_daus = tau_daus_info.first;
+        int tau_decay = tau_daus_info.second;
+        cout << "  tau decay mode: " << tau_decay << endl;
+        cout << "  tau daughters: " << endl;
+        for (auto dau : tau_daus) {
+          cout << "    pdgid: " << dau->pdgId() << "  deltaR(jet, dau): " << reco::deltaR(jet->p4(), dau->p4()) << endl;
         }
       }
     }
   }
 
-  return std::make_pair(FatJetLabel::Invalid, empty_v);
+  // make labels
+  // be sure not using hVV_daughters following on (order not switched)
+  if (wsdecay[0] == W_cs && wsdecay[1] == W_cs) {
+    if (daus_matched[0] && daus_matched[1] && daus_matched[2] && daus_matched[3])
+      getResult().label = "H_WW_cscs";
+    else if (daus_matched[0] && daus_matched[2] && (daus_matched[1] || daus_matched[3]))
+      getResult().label = "H_WW_csc";
+    else if (daus_matched[1] && daus_matched[3] && (daus_matched[0] || daus_matched[2]))
+      getResult().label = "H_WW_css";
+    else if (daus_matched[0] + daus_matched[1] + daus_matched[2] + daus_matched[3] >= 3)
+      throw std::logic_error("[FatJetMatching::higgs_WW_label]: All 3-q matched cases should be handled");
+  }
+  else if (wsdecay[0] == W_cs && wsdecay[1] == W_qq) {
+    if (daus_matched[0] && daus_matched[1] && daus_matched[2] && daus_matched[3])
+      getResult().label = "H_WW_csqq";
+    else if (daus_matched[0] && daus_matched[1] && (daus_matched[2] || daus_matched[3]))
+      getResult().label = "H_WW_csq";
+    else if (daus_matched[0] && !daus_matched[1] && daus_matched[2] && daus_matched[3])
+      getResult().label = "H_WW_qqc";
+    else if (!daus_matched[0] && daus_matched[1] && daus_matched[2] && daus_matched[3])
+      getResult().label = "H_WW_qqs";
+    else if (daus_matched[0] + daus_matched[1] + daus_matched[2] + daus_matched[3] >= 3)
+      throw std::logic_error("[FatJetMatching::higgs_WW_label]: All 3-q matched cases should be handled");
+  }
+  else if (wsdecay[0] == W_qq && wsdecay[1] == W_cs) {
+    if (daus_matched[2] && daus_matched[3] && daus_matched[0] && daus_matched[1])
+      getResult().label = "H_WW_csqq";
+    else if (daus_matched[2] && daus_matched[3] && (daus_matched[0] || daus_matched[1]))
+      getResult().label = "H_WW_csq";
+    else if (daus_matched[2] && !daus_matched[3] && daus_matched[0] && daus_matched[1])
+      getResult().label = "H_WW_qqc";
+    else if (!daus_matched[2] && daus_matched[3] && daus_matched[0] && daus_matched[1])
+      getResult().label = "H_WW_qqs";
+    else if (daus_matched[0] + daus_matched[1] + daus_matched[2] + daus_matched[3] >= 3)
+      throw std::logic_error("[FatJetMatching::higgs_WW_label]: All 3-q matched cases should be handled");
+  }
+  else if (wsdecay[0] == W_qq && wsdecay[1] == W_qq) {
+    if (daus_matched[0] && daus_matched[1] && daus_matched[2] && daus_matched[3])
+      getResult().label = "H_WW_qqqq";
+    else if (daus_matched[0] + daus_matched[1] + daus_matched[2] + daus_matched[3] == 3)
+      getResult().label = "H_WW_qqq";
+  }
+  // then will be qqlv case
+  else {
+    if (daus_matched[0] && daus_matched[1] && daus_matched[2]) {
+      if (wsdecay[1] == W_ev)  getResult().label = (wsdecay[0] == W_cs) ? "H_WW_csev" : "H_WW_qqev";
+      else if (wsdecay[1] == W_mv)  getResult().label = (wsdecay[0] == W_cs) ? "H_WW_csmv" : "H_WW_qqmv";
+      else if (wsdecay[1] == W_tauev)  getResult().label = (wsdecay[0] == W_cs) ? "H_WW_cstauev" : "H_WW_qqtauev";
+      else if (wsdecay[1] == W_taumv)  getResult().label = (wsdecay[0] == W_cs) ? "H_WW_cstaumv" : "H_WW_qqtaumv";
+      else if (wsdecay[1] == W_tauhv)  getResult().label = (wsdecay[0] == W_cs) ? "H_WW_cstauhv" : "H_WW_qqtauhv";
+    }
+  }
+}
+
+void FatJetMatching::higgs_ZZ_label(const pat::Jet* jet, std::vector<const reco::GenParticle*>& hVV_daughters, double distR)
+{
+  enum ZDecay {Z_bb, Z_cc, Z_ss, Z_qq, Z_ee, Z_mm, Z_tauhtaue, Z_tauhtaum, Z_tauhtauh, Z_null};
+
+  // determine the decay mode of two Ws
+  ZDecay zsdecay[2] = {Z_null, Z_null};
+  int daus_matched[4] = {0, 0, 0, 0};
+  for (int i=0; i<2; ++i) {
+    const reco::GenParticle* daus[2] = {hVV_daughters.at(i*2), hVV_daughters.at(i*2+1)};
+
+    if (std::abs(daus[0]->pdgId()) >= ParticleID::p_d && std::abs(daus[0]->pdgId()) <= ParticleID::p_nu_mu) {
+      // Z->qq/ee/mumu
+      if (std::abs(daus[0]->pdgId()) == ParticleID::p_b && std::abs(daus[1]->pdgId()) == ParticleID::p_b) {
+        zsdecay[i] = Z_bb;
+      }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_c && std::abs(daus[1]->pdgId()) == ParticleID::p_c) {
+        zsdecay[i] = Z_cc;
+      }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_s && std::abs(daus[1]->pdgId()) == ParticleID::p_s) {
+        zsdecay[i] = Z_ss;
+      }else if ((std::abs(daus[0]->pdgId()) == ParticleID::p_u && std::abs(daus[1]->pdgId()) == ParticleID::p_u) || 
+                (std::abs(daus[0]->pdgId()) == ParticleID::p_d && std::abs(daus[1]->pdgId()) == ParticleID::p_d)) {
+        zsdecay[i] = Z_qq;
+      }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_eminus && std::abs(daus[1]->pdgId()) == ParticleID::p_eminus) {
+        zsdecay[i] = Z_ee;
+      }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_muminus && std::abs(daus[1]->pdgId()) == ParticleID::p_muminus) {
+        zsdecay[i] = Z_mm;
+      }
+      // check if the quarks are matched to the jet
+      for (int j=0; j<2; ++j) {
+        if (reco::deltaR(jet->p4(), daus[j]->p4()) < distR) {
+          daus_matched[i*2+j] = 1;
+          getResult().particles.push_back(daus[j]);
+        }
+      }
+    }else if (std::abs(daus[0]->pdgId()) == ParticleID::p_tauminus && std::abs(daus[1]->pdgId()) == ParticleID::p_tauminus) {
+      // Z->tautau
+
+      auto tau1_daus_info = getTauDaughters(daus[0]);
+      auto tau2_daus_info = getTauDaughters(daus[1]);
+
+      // let hadronic tau be the first one
+      if (tau1_daus_info.second < 2 && tau2_daus_info.second == 2){
+        std::swap(daus[0], daus[1]);
+        std::swap(tau1_daus_info, tau2_daus_info);
+      }
+      if (tau1_daus_info.second == 2){ // first tau must be tauh
+        if (tau2_daus_info.second == 0 || tau2_daus_info.second == 1){
+          if (tau2_daus_info.second == 0) {
+            zsdecay[i] = Z_tauhtaue;
+          }else {
+            zsdecay[i] = Z_tauhtaum;
+          }
+          // matching of the first tauh and the second taue/taum
+          if (reco::deltaR(jet->p4(), daus[0]->p4()) < distR) {
+            daus_matched[i*2] = 1;
+            getResult().particles.insert(getResult().particles.end(), tau1_daus_info.first.begin(), tau1_daus_info.first.end());
+          }
+          if (reco::deltaR(jet->p4(), tau2_daus_info.first.at(0)->p4()) < distR) {
+            daus_matched[i*2+1] = 1;
+            getResult().particles.push_back(tau2_daus_info.first.at(0));
+          }
+        }else if (tau2_daus_info.second == 2){
+          zsdecay[i] = Z_tauhtauh;
+          // matching of both tauh
+          if (reco::deltaR(jet->p4(), daus[0]->p4()) < distR) {
+            daus_matched[i*2] = 1;
+            getResult().particles.insert(getResult().particles.end(), tau1_daus_info.first.begin(), tau1_daus_info.first.end());
+          }
+          if (reco::deltaR(jet->p4(), daus[1]->p4()) < distR) {
+            daus_matched[i*2+1] = 1;
+            getResult().particles.insert(getResult().particles.end(), tau2_daus_info.first.begin(), tau2_daus_info.first.end());
+          }
+        }
+      }
+    }
+    if (debug_){
+      using namespace std;
+      cout << "Z_" << i+1 << " decay mode  :" << zsdecay[i] << endl;
+      cout <<  "  pdgid(dau1)   : " << daus[0]->pdgId() << endl;
+      cout <<  "  pdgid(dau2)   : " << daus[1]->pdgId() << endl;
+      cout <<  "  deltaR(jet, dau1)  : " << reco::deltaR(jet->p4(), daus[0]->p4()) << "  dau/tau-dau is matched: " << daus_matched[i*2] << endl;
+      cout <<  "  deltaR(jet, dau2)  : " << reco::deltaR(jet->p4(), daus[1]->p4()) << "  dau/tau-dau is matched: " << daus_matched[i*2+1] << endl;
+      if (zsdecay[i] == Z_tauhtaue || zsdecay[i] == Z_tauhtaum || zsdecay[i] == Z_tauhtauh) {
+        for (int j=0; j<2; j++) {
+          auto tau_daus_info = getTauDaughters(daus[j]);
+          auto tau_daus = tau_daus_info.first;
+          int tau_decay = tau_daus_info.second;
+          cout << "  tau_" << j+1 << " :" << endl;
+          cout << "    tau decay mode: " << tau_decay << endl;
+          cout << "    tau daughters: " << endl;
+          for (auto dau : tau_daus) {
+            cout << "      pdgid: " << dau->pdgId() << "  deltaR(jet, dau): " << reco::deltaR(jet->p4(), dau->p4()) << endl;
+          }
+        }
+      }
+    }
+
+  }
+  if (zsdecay[0] == Z_null || zsdecay[1] == Z_null) {
+    // other Z modes will not be handled (e.g Z->tauetaue)
+    return;
+  }
+  if (zsdecay[1] == Z_tauhtaue || zsdecay[1] == Z_tauhtaum || zsdecay[1] == Z_tauhtauh) {
+    // requires both taus should be matched
+    if (!daus_matched[2] || !daus_matched[3]) {
+      return;
+    }
+  }
+  if (daus_matched[0] + daus_matched[1] + daus_matched[2] + daus_matched[3] < 3) {
+    // should have at least has three matched daughters to desinate the ZZ label
+    return;
+  }
+
+  // make labels
+  // be sure not using hVV_daughters following on (order not switched)
+
+  std::string matched_parts_str = "";
+  for (int i=0; i<2; ++i) {
+    if (zsdecay[i] == Z_bb)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "bb" : "b";
+    else if (zsdecay[i] == Z_cc)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "cc" : "c";
+    else if (zsdecay[i] == Z_ss)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "ss" : "s";
+    else if (zsdecay[i] == Z_qq)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "qq" : "q";
+    else if (zsdecay[i] == Z_ee)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "ee" : "e";
+    else if (zsdecay[i] == Z_mm)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "mm" : "m";
+    else if (zsdecay[i] == Z_tauhtaue)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "tauhtaue" : "NULL";
+    else if (zsdecay[i] == Z_tauhtaum)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "tauhtaum" : "NULL";
+    else if (zsdecay[i] == Z_tauhtauh)  matched_parts_str += (daus_matched[i*2] && daus_matched[i*2+1]) ? "tauhtauh" : "NULL";
+  }
+  // desinate the label
+  std::map<std::vector<std::string>, std::string> acceptable_strs_map = {
+    {{"bbbb"}, "H_ZZ_bbbb"}, {{"bbcc", "ccbb"}, "H_ZZ_bbcc"}, {{"bbss", "ssbb"}, "H_ZZ_bbss"}, {{"bbqq", "qqbb"}, "H_ZZ_bbqq"}, {{"bbee", "eebb"}, "H_ZZ_bbee"}, {{"bbmm", "mmbb"}, "H_ZZ_bbmm"},
+    {{"bbtauhtaue", "tauhtauebb"}, "H_ZZ_bbtauhtaue"}, {{"bbtauhtaum", "tauhtaumbb"}, "H_ZZ_bbtauhtaum"}, {{"bbtauhtauh", "tauhtauhbb"}, "H_ZZ_bbtauhtauh"},
+    {{"bbb"}, "H_ZZ_bbb"}, {{"bbc", "cbb"}, "H_ZZ_bbc"}, {{"bbs", "sbb"}, "H_ZZ_bbs"}, {{"bbq", "qbb"}, "H_ZZ_bbq"}, {{"bbe", "ebb"}, "H_ZZ_bbe"}, {{"bbm", "mbb"}, "H_ZZ_bbm"},
+    {{"cccc"}, "H_ZZ_cccc"}, {{"ccss", "sscc"}, "H_ZZ_ccss"}, {{"ccqq", "qqcc"}, "H_ZZ_ccqq"}, {{"ccee", "eecc"}, "H_ZZ_ccee"}, {{"ccmm", "mmcc"}, "H_ZZ_ccmm"},
+    {{"cctauhtaue", "tauhtauecc"}, "H_ZZ_cctauhtaue"}, {{"cctauhtaum", "tauhtaumcc"}, "H_ZZ_cctauhtaum"}, {{"cctauhtauh", "tauhtauhcc"}, "H_ZZ_cctauhtauh"},
+    {{"ccb", "bcc"}, "H_ZZ_ccb"}, {{"ccc"}, "H_ZZ_ccc"}, {{"ccs", "scc"}, "H_ZZ_ccs"}, {{"ccq", "qcc"}, "H_ZZ_ccq"}, {{"cce", "ecc"}, "H_ZZ_cce"}, {{"ccm", "mcc"}, "H_ZZ_ccm"},
+    {{"ssss"}, "H_ZZ_ssss"}, {{"ssqq", "qqss"}, "H_ZZ_ssqq"}, {{"ssee", "eess"}, "H_ZZ_ssee"}, {{"ssmm", "mmss"}, "H_ZZ_ssmm"},
+    {{"sstauhtaue", "tauhtauess"}, "H_ZZ_sstauhtaue"}, {{"sstauhtaum", "tauhtaumss"}, "H_ZZ_sstauhtaum"}, {{"sstauhtauh", "tauhtauhss"}, "H_ZZ_sstauhtauh"},
+    {{"ssb", "bss"}, "H_ZZ_ssb"}, {{"ssc", "css"}, "H_ZZ_ssc"}, {{"sss"}, "H_ZZ_sss"}, {{"ssq", "qss"}, "H_ZZ_ssq"}, {{"sse", "ess"}, "H_ZZ_sse"}, {{"ssm", "mss"}, "H_ZZ_ssm"},
+    {{"qqqq"}, "H_ZZ_qqqq"}, {{"qqee", "eeqq"}, "H_ZZ_qqee"}, {{"qqmm", "mmqq"}, "H_ZZ_qqmm"},
+    {{"qqtauhtaue", "tauhtaueqq"}, "H_ZZ_qqtauhtaue"}, {{"qqtauhtaum", "tauhtaumqq"}, "H_ZZ_qqtauhtaum"}, {{"qqtauhtauh", "tauhtauhqq"}, "H_ZZ_qqtauhtauh"},
+    {{"qqb", "bqq"}, "H_ZZ_qqb"}, {{"qqc", "cqq"}, "H_ZZ_qqc"}, {{"qqs", "sqq"}, "H_ZZ_qqs"}, {{"qqq"}, "H_ZZ_qqq"}, {{"qqe", "eqq"}, "H_ZZ_qqe"}, {{"qqm", "mqq"}, "H_ZZ_qqm"},
+    {{"eeb", "bee"}, "H_ZZ_bee"}, {{"eec", "cee"}, "H_ZZ_cee"}, {{"ees", "see"}, "H_ZZ_see"}, {{"eeq", "qee"}, "H_ZZ_qee"},
+    {{"mmb", "bmm"}, "H_ZZ_bmm"}, {{"mmc", "cmm"}, "H_ZZ_cmm"}, {{"mms", "smm"}, "H_ZZ_smm"}, {{"mmq", "qmm"}, "H_ZZ_qmm"},
+    {{"tauhtaueb", "btauhtaue"}, "H_ZZ_btauhtaue"}, {{"tauhtauec", "ctauhtaue"}, "H_ZZ_ctauhtaue"}, {{"tauhtaues", "stauhtaue"}, "H_ZZ_stauhtaue"}, {{"tauhtaueq", "qtauhtaue"}, "H_ZZ_qtauhtaue"},
+    {{"tauhtaumb", "btauhtaum"}, "H_ZZ_btauhtaum"}, {{"tauhtaumc", "ctauhtaum"}, "H_ZZ_ctauhtaum"}, {{"tauhtaums", "stauhtaum"}, "H_ZZ_stauhtaum"}, {{"tauhtaumq", "qtauhtaum"}, "H_ZZ_qtauhtaum"},
+    {{"tauhtauhb", "btauhtauh"}, "H_ZZ_btauhtauh"}, {{"tauhtauhc", "ctauhtauh"}, "H_ZZ_ctauhtauh"}, {{"tauhtauhs", "stauhtauh"}, "H_ZZ_stauhtauh"}, {{"tauhtauhq", "qtauhtauh"}, "H_ZZ_qtauhtauh"},
+  };
+  for (auto it = acceptable_strs_map.begin(); it != acceptable_strs_map.end(); ++it) {
+    auto& acceptable_strs = it->first;
+    std::string& label = it->second;
+
+    // iterate over all string options
+    for (auto it_str = acceptable_strs.begin(); it_str != acceptable_strs.end(); ++it_str) {
+      if (matched_parts_str == (*it_str)) {
+        getResult().label = label;
+        return;
+      }
+    }
+  }
+  throw std::logic_error("[FatJetMatching::higgs_ZZ_label] Unmatched HZZ label: " + matched_parts_str);
 
 }
 
-std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > FatJetMatching::qcd_label(const pat::Jet* jet, const reco::GenParticleCollection& genParticles, double distR)
+void FatJetMatching::qcd_label(const pat::Jet* jet, const reco::GenParticleCollection& genParticles, double distR)
 {
-
   const reco::GenParticle *parton = nullptr;
-  std::vector<const reco::GenParticle*> parton_v;
   double minDR = 999;
   for (const auto &gp : genParticles){
     if (gp.status() != 23) continue;
@@ -992,18 +1035,16 @@ std::pair<FatJetMatching::FatJetLabel, std::vector<const reco::GenParticle*> > F
   auto n_bHadrons = jet->jetFlavourInfo().getbHadrons().size();
   auto n_cHadrons = jet->jetFlavourInfo().getcHadrons().size();
 
-  if (parton)  parton_v = {parton};
-  else  parton_v = {};
-
   if (n_bHadrons>=2) {
-    return std::make_pair(FatJetLabel::QCD_bb, parton_v);
+    getResult().label = "QCD_bb";
   }else if (n_bHadrons==1){
-    return std::make_pair(FatJetLabel::QCD_b, parton_v);
+    getResult().label = "QCD_b";
   }else if (n_cHadrons>=2){
-    return std::make_pair(FatJetLabel::QCD_cc, parton_v);
+    getResult().label = "QCD_cc";
   }else if (n_cHadrons==1){
-    return std::make_pair(FatJetLabel::QCD_c, parton_v);
+    getResult().label = "QCD_c";
+  }else{
+    getResult().label = "QCD_others";
   }
 
-  return std::make_pair(FatJetLabel::QCD_others, parton_v);
 }

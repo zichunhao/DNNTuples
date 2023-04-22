@@ -40,7 +40,10 @@ private:
   bool useReclusteredJets_ = false;
   bool isQCDSample_ = false;
   bool isTTBarSample_ = false;
+  bool isHVV2DVarMassSample_ = false;
   bool isTrainSample_ = false;
+  bool isMDTagger_ = true;
+  bool fillSeparateLabels_ = false;
 
   bool sample_use_pythia_ = false;
   bool sample_use_herwig_ = false;
@@ -49,8 +52,29 @@ private:
   std::string fjTagInfoName;
   std::string fjName;
 
+  bool debug_ = false;
+
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
+
+  std::vector<std::string> labelTop_ = {
+    "bWcs", "bWqq", "bWc", "bWs", "bWq", "bWev", "bWmv", "bWtauev", "bWtaumv", "bWtauhv",
+    "Wcs", "Wqq", "Wev", "Wmv", "Wtauev", "Wtaumv", "Wtauhv"};
+  std::vector<std::string> labelW_ = {"cs", "qq", "ev", "mv", "tauev", "taumv", "tauhv"};
+  std::vector<std::string> labelZ_ = {"bb", "cc", "ss" "qq"};
+  std::vector<std::string> labelH2p_ = {
+    "bb", "cc", "ss", "qq", "bc", "bs", "cs", "gg",
+    "ee", "mm", "tauhtaue", "tauhtaum", "tauhtauh"};
+  std::vector<std::string> labelHWW_ = {
+    "cscs", "csqq", "qqqq",
+    "csc", "css", "csq", "qqc", "qqs", "qqq",
+    "csev", "qqev", "csmv", "qqmv", "cstauev", "qqtauev", "cstaumv", "qqtaumv", "cstauhv", "qqtauhv"};
+  std::vector<std::string> labelHZZ_ = {
+    "bbbb", "bbcc", "bbss", "bbqq", "cccc", "ccss", "ccqq", "ssss", "ssqq", "qqqq",
+    "bbb", "bbc", "bbs", "bbq", "ccb", "ccc", "ccs", "ccq", "ssb", "ssc", "sss", "ssq", "qqb", "qqc", "qqs", "qqq",
+    "bbee", "bbmm", "bbe", "bbm", "bee", "bmm", "bbtauhtaue", "bbtauhtaum", "bbtauhtauh", "btauhtaue", "btauhtaum", "btauhtauh", "ccee", "ccmm", "cce", "ccm", "cee", "cmm", "cctauhtaue", "cctauhtaum", "cctauhtauh", "ctauhtaue", "ctauhtaum", "ctauhtauh", "ssee", "ssmm", "sse", "ssm", "see", "smm", "sstauhtaue", "sstauhtaum", "sstauhtauh", "stauhtaue", "stauhtaum", "stauhtauh", "qqee", "qqmm", "qqe", "qqm", "qee", "qmm", "qqtauhtaue", "qqtauhtaum", "qqtauhtauh", "qtauhtaue", "qtauhtaum", "qtauhtauh"};
+  std::vector<std::string> labelQCD_ = {"bb", "cc", "b", "c", "others"};
+  std::vector<std::string> labels_ = {};
 
 };
 
