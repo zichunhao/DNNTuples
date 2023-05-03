@@ -6,6 +6,7 @@ options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
 # options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/240000/82A9346F-78D8-AE45-A0A9-F3BC0A33480B.root' ## QCD test
+# options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/QCD_Pt_470to600_TuneCP5_13TeV_pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/230000/99B7EC88-541E-3143-8892-6DDD179CBC4B.root' ## QCD test 2
 # options.inputFiles = '/store/group/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4QTau_MX-600to6000_MH-15to250/20UL17MiniAODv2/part2/miniv2_14998562-1403.root' ## H->qq/tautau
 # options.inputFiles = '/store/group/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Glu_MX-600to6000_MH-15to250/20UL17MiniAODv2/part3/miniv2_15687298-876.root' ## H->gg
 # options.inputFiles = '/store/group/cmst3/group/vhcc/sfTuples/ChargedHiggs_HplusToBC_HminusToBC_HT-600to6000_MH-15to250/20UL17MiniAODv2/miniv2_15164446-2044.root' ## H->bc

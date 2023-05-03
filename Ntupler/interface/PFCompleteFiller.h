@@ -45,6 +45,9 @@ private:
   edm::EDGetTokenT<reco::VertexCompositePtrCandidateCollection> svToken_;
   edm::Handle<reco::VertexCompositePtrCandidateCollection> SVs;
 
+  edm::EDGetTokenT<edm::View<reco::Candidate>> ltToken_;
+  edm::Handle<edm::View<reco::Candidate>> LTs;
+
   edm::ESHandle<TransientTrackBuilder> builder_;
 };
 
