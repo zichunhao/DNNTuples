@@ -16,6 +16,7 @@ void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCo
   minPt_ = iConfig.getUntrackedParameter<double>("jetPtMin", 150);
   maxPt_ = iConfig.getUntrackedParameter<double>("jetPtMax", -1);
   maxAbsEta_ = iConfig.getUntrackedParameter<double>("jetAbsEtaMax", 2.4);
+  isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
   btag_discriminators_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminators");
 
@@ -48,6 +49,11 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
   if (jet.pt() < minPt_) return false;
   if (maxPt_ > 0 && jet.pt() > maxPt_) return false;
   if (std::abs(jet.eta()) > maxAbsEta_) return false;
+
+  // QCD samples for inference: keep only 1/7 of the events
+  if (!isTrainSample_ && isQCDSample_) {
+    if (event_ %7 != 0) return false;
+  }
 
   // event information
   data.fill<unsigned>("event_no", event_);
