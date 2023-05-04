@@ -44,6 +44,7 @@ private:
   double maxPt_ = 0;
   double maxAbsEta_ = 0;
   bool isQCDSample_ = false;
+  bool isTTBarSample_ = false;
   bool isTrainSample_ = false;
   std::vector<std::string> btag_discriminators_;
 
