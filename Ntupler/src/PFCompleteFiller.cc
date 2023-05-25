@@ -375,54 +375,54 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
             //if(p.getLayer(hit)==1){
             // std::cout<< (hit >> LayerOffset) << " " << ((hit >> LayerOffset) & LayerMask) << std::endl;
             //}  
-            if(p.getLayer(hit)==1) cpfcandlt_nhitpixelBarrelLayer1 = cpfcandlt_nhitpixelBarrelLayer1+1;
-            if(p.getLayer(hit)==2) cpfcandlt_nhitpixelBarrelLayer2 = cpfcandlt_nhitpixelBarrelLayer2+1;
-            if(p.getLayer(hit)==3) cpfcandlt_nhitpixelBarrelLayer3 = cpfcandlt_nhitpixelBarrelLayer3+1;
-            if(p.getLayer(hit)==4) cpfcandlt_nhitpixelBarrelLayer4 = cpfcandlt_nhitpixelBarrelLayer4+1;
+            if(p.getLayer(hit)==1) cpfcandlt_nhitpixelBarrelLayer1++;
+            if(p.getLayer(hit)==2) cpfcandlt_nhitpixelBarrelLayer2++;
+            if(p.getLayer(hit)==3) cpfcandlt_nhitpixelBarrelLayer3++;
+            if(p.getLayer(hit)==4) cpfcandlt_nhitpixelBarrelLayer4++;
           } 
           //Pixel Endcap
           if(p.pixelEndcapHitFilter(hit)){
             //std::cout << "valid hit found in pixel Endcap layer " << p.getLayer(hit) << std::endl;
-            if(p.getLayer(hit)==1) cpfcandlt_nhitpixelEndcapLayer1 = cpfcandlt_nhitpixelEndcapLayer1+1;
-            if(p.getLayer(hit)==2) cpfcandlt_nhitpixelEndcapLayer2 = cpfcandlt_nhitpixelEndcapLayer2+1;
+            if(p.getLayer(hit)==1) cpfcandlt_nhitpixelEndcapLayer1++;
+            if(p.getLayer(hit)==2) cpfcandlt_nhitpixelEndcapLayer2++;
           } 
           //Strip TIB
           if(p.stripTIBHitFilter(hit)){
             //std::cout << "valid hit found in TIB layer " << p.getLayer(hit) << std::endl;
-            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTIBLayer1 = cpfcandlt_nhitstripTIBLayer1+1;
-            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTIBLayer2 = cpfcandlt_nhitstripTIBLayer2+1;
-            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTIBLayer3 = cpfcandlt_nhitstripTIBLayer3+1;
-            if(p.getLayer(hit)==4) cpfcandlt_nhitstripTIBLayer4 = cpfcandlt_nhitstripTIBLayer4+1;
+            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTIBLayer1++;
+            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTIBLayer2++;
+            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTIBLayer3++;
+            if(p.getLayer(hit)==4) cpfcandlt_nhitstripTIBLayer4++;
           } 
           //Strip TID
           if(p.stripTIDHitFilter(hit)){
             //std::cout << "valid hit found in TID layer " << p.getLayer(hit) << std::endl;
-            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTIDLayer1 = cpfcandlt_nhitstripTIDLayer1+1;
-            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTIDLayer2 = cpfcandlt_nhitstripTIDLayer2+1;
-            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTIDLayer3 = cpfcandlt_nhitstripTIDLayer3+1;
+            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTIDLayer1++;
+            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTIDLayer2++;
+            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTIDLayer3++;
           } 
           //Strip TOB
           if(p.stripTOBHitFilter(hit)){
             //std::cout << "valid hit found in TOB layer " << p.getLayer(hit) << std::endl;
-            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTOBLayer1 = cpfcandlt_nhitstripTOBLayer1+1;
-            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTOBLayer2 = cpfcandlt_nhitstripTOBLayer2+1;
-            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTOBLayer3 = cpfcandlt_nhitstripTOBLayer3+1;
-            if(p.getLayer(hit)==4) cpfcandlt_nhitstripTOBLayer4 = cpfcandlt_nhitstripTOBLayer4+1;
-            if(p.getLayer(hit)==5) cpfcandlt_nhitstripTOBLayer5 = cpfcandlt_nhitstripTOBLayer5+1;
-            if(p.getLayer(hit)==6) cpfcandlt_nhitstripTOBLayer6 = cpfcandlt_nhitstripTOBLayer6+1;
+            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTOBLayer1++;
+            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTOBLayer2++;
+            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTOBLayer3++;
+            if(p.getLayer(hit)==4) cpfcandlt_nhitstripTOBLayer4++;
+            if(p.getLayer(hit)==5) cpfcandlt_nhitstripTOBLayer5++;
+            if(p.getLayer(hit)==6) cpfcandlt_nhitstripTOBLayer6++;
           } 
           //Strip TEC
           if(p.stripTECHitFilter(hit)){
             //std::cout << "valid hit found in TEC layer " << p.getLayer(hit) << std::endl;
-            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTECLayer1 = cpfcandlt_nhitstripTECLayer1+1;
-            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTECLayer2 = cpfcandlt_nhitstripTECLayer2+1;
-            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTECLayer3 = cpfcandlt_nhitstripTECLayer3+1;
-            if(p.getLayer(hit)==4) cpfcandlt_nhitstripTECLayer4 = cpfcandlt_nhitstripTECLayer4+1;
-            if(p.getLayer(hit)==5) cpfcandlt_nhitstripTECLayer5 = cpfcandlt_nhitstripTECLayer5+1;
-            if(p.getLayer(hit)==6) cpfcandlt_nhitstripTECLayer6 = cpfcandlt_nhitstripTECLayer6+1;
-            if(p.getLayer(hit)==7) cpfcandlt_nhitstripTECLayer7 = cpfcandlt_nhitstripTECLayer7+1;
-            if(p.getLayer(hit)==8) cpfcandlt_nhitstripTECLayer8 = cpfcandlt_nhitstripTECLayer8+1;
-            if(p.getLayer(hit)==9) cpfcandlt_nhitstripTECLayer9 = cpfcandlt_nhitstripTECLayer9+1;
+            if(p.getLayer(hit)==1) cpfcandlt_nhitstripTECLayer1++;
+            if(p.getLayer(hit)==2) cpfcandlt_nhitstripTECLayer2++;
+            if(p.getLayer(hit)==3) cpfcandlt_nhitstripTECLayer3++;
+            if(p.getLayer(hit)==4) cpfcandlt_nhitstripTECLayer4++;
+            if(p.getLayer(hit)==5) cpfcandlt_nhitstripTECLayer5++;
+            if(p.getLayer(hit)==6) cpfcandlt_nhitstripTECLayer6++;
+            if(p.getLayer(hit)==7) cpfcandlt_nhitstripTECLayer7++;
+            if(p.getLayer(hit)==8) cpfcandlt_nhitstripTECLayer8++;
+            if(p.getLayer(hit)==9) cpfcandlt_nhitstripTECLayer9++;
           } 
         }
         //// expert level: printout the hit in 11-bit binary format
