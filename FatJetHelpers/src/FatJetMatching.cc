@@ -29,6 +29,7 @@ void FatJetMatching::flavorLabel(const pat::Jet* jet,
     }
   }
 
+  bool found_higgs = false;
   for (unsigned ipart = 0; ipart<genParticles.size(); ++ipart){
     const auto *gp = &genParticles[ipart];
 
@@ -43,12 +44,23 @@ void FatJetMatching::flavorLabel(const pat::Jet* jet,
         return;
       }
     }else if (pdgid == ParticleID::p_h0 || pdgid == ParticleID::p_H0 || pdgid == ParticleID::p_Hplus || pdgid == ParticleID::p_Hbsm){
+      found_higgs = true;
+      // Higgs found in the record so we'll stop recongnizing
+      // following W or Zs as Higgs (in case of HWW/ZZ)
       clearResult();
       higgs_label(jet, gp, distR);
       if (getResult().label != "Invalid"){
         return;
       }
-    }else if (!isMDTagger && pdgid == ParticleID::p_Wplus){
+    }else if (!found_higgs && (pdgid == ParticleID::p_Wplus || pdgid == ParticleID::p_Z0)){
+      clearResult();
+      higgs_label(jet, gp, distR);
+      if (getResult().label != "Invalid"){
+        return;
+      }
+    }
+    // special W/Z labels for non-MD tagger
+    else if (!isMDTagger && pdgid == ParticleID::p_Wplus){
       clearResult();
       w_label(jet, gp, distR, /*is_from_top=*/ false);
       if (getResult().label != "Invalid"){
