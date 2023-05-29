@@ -655,7 +655,8 @@ void FatJetMatching::higgs_label(const pat::Jet* jet, const reco::GenParticle *p
           getResult().label = "H_cc";
         }else if (pdgid_q1 == ParticleID::p_s && pdgid_q2 == ParticleID::p_s) {
           getResult().label = "H_ss";
-        }else if ((pdgid_q1 == ParticleID::p_u && pdgid_q2 == ParticleID::p_u) || (pdgid_q1 == ParticleID::p_d && pdgid_q2 == ParticleID::p_d)) {
+        }else if ((pdgid_q1 == ParticleID::p_u && pdgid_q2 == ParticleID::p_u) || (pdgid_q1 == ParticleID::p_d && pdgid_q2 == ParticleID::p_d) || 
+                  (pdgid_q1 == ParticleID::p_u && pdgid_q2 == ParticleID::p_d) || (pdgid_q1 == ParticleID::p_d && pdgid_q2 == ParticleID::p_u)) {
           getResult().label = "H_qq";
         }else if ((pdgid_q1 == ParticleID::p_b && pdgid_q2 == ParticleID::p_c) || (pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_b)) {
           getResult().label = "H_bc";
