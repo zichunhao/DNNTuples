@@ -19,10 +19,10 @@ options.outputFile = 'output.root'
 # options.inputFiles = '/store/group/cmst3/group/vhcc/sfTuples/20220523_HWW_JHUVariableWMass/2017/mc/BulkGravitonToHHTo4W_MX-600to6000_MH-15to250_JHUVariableWMass_part2/DNNTuples_PrivateMC/220523_095639/0002/miniv2_2420.root' ## HWW 2
 # options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4W_MX-600to6000_MH-15to250_JHUVariableWMass2DMesh/20UL17MiniAODv2/part2/miniv2_15683018-4322.root' ## HWW 2dmesh
 # options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass/20UL17MiniAODv2/part3/miniv2_15820048-548.root' ## HZZ 1
-# options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass/20UL17MiniAODv2/part3/miniv2_15820048-549.root' ## HZZ 2
+options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass/20UL17MiniAODv2/part3/miniv2_15820048-549.root' ## HZZ 2
 # options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass2DMesh/20UL17MiniAODv2/part2/miniv2_15822201-2585.root' ## HZZ 2dmesh
 # options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToZZToZhadZhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/110000/DABA0ABE-8F97-9747-9A7A-4E31435442E1.root' ## Zqq inference
-options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToWWToWhadWhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/260000/F1F668E3-CB4A-ED4E-9493-3485628D5059.root'  ## Wqq inference
+# options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToWWToWhadWhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/260000/F1F668E3-CB4A-ED4E-9493-3485628D5059.root'  ## Wqq inference
 
 options.maxEvents = -1
 
@@ -73,7 +73,7 @@ process.options = cms.untracked.PSet(
 print('Using output file ' + options.outputFile)
 
 process.TFileService = cms.Service("TFileService",
-                                  fileName= cms.string(options.outputFile))
+                                   fileName=cms.string(options.outputFile))
 
 process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEvents))
 
@@ -156,7 +156,8 @@ if doCustomTaggerInference:
     from DeepNTuples.Ntupler.jetTools import updateJetCollection # use custom updataJetCollection
     from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedDeepHWWV1_cff import _pfMassDecorrelatedDeepHWWV1JetTagsAll
     from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV1_cff import _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll
-    btagDiscriminatorsCustom = _pfMassDecorrelatedDeepHWWV1JetTagsAll + _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll
+    from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV2_cff import _pfMassDecorrelatedInclParticleTransformerV2JetTagsAll
+    btagDiscriminatorsCustom = _pfMassDecorrelatedDeepHWWV1JetTagsAll + _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll # + _pfMassDecorrelatedInclParticleTransformerV2JetTagsAll
 
 if useReclusteredJets:
     JETCorrLevels = ['L2Relative', 'L3Absolute']
@@ -262,8 +263,10 @@ process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
 process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom
 
-process.deepntuplizer.genJetsWithMuMatch = 'ak8GenJetsWithNuMatch'
-process.deepntuplizer.genJetsWithMuSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
+process.deepntuplizer.genJetsWithNuMatch = 'ak8GenJetsWithNuMatch'
+process.deepntuplizer.genJetsWithNuSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
+process.deepntuplizer.genJetsNoNuMatch = 'ak8GenJetsNoNuMatch'
+process.deepntuplizer.genJetsNoNuSoftDropMatch = 'ak8GenJetsNoNuSoftDropMatch'
 
 # determine sample type with inputFiles name
 _inputfile = options.inputFiles[0]

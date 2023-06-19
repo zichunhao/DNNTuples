@@ -7,3 +7,6 @@
 *.pyc
 __init__.py
 .DS_Store
+
+Ntupler/data/InclParticleTransformer-MD/ak8/V02/
+Ntupler/data/InclParticleTransformer-MD/ak8/V02-N/
