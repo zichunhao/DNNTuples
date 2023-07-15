@@ -132,7 +132,9 @@ updateJetCollection(
     postfix='AK15WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
 )
 # modify the ParticleNet-MD AK15 model
-# process.pfMassDecorrelatedParticleNetJetTagsAK15WithPuppiDaughters.model_path = cms.FileInPath('DeepNTuples/Ntupler/data/ParticleNet-MD/ak15/ParticleNetMD.onnx')
+process.pfParticleNetTagInfosAK15WithPuppiDaughters.jet_radius = 1.5
+process.pfMassDecorrelatedParticleNetJetTagsAK15WithPuppiDaughters.preprocess_json = 'DeepNTuples/Ntupler/data/ParticleNet-MD/ak15/V02d/preprocess.json'
+process.pfMassDecorrelatedParticleNetJetTagsAK15WithPuppiDaughters.model_path = 'DeepNTuples/Ntupler/data/ParticleNet-MD/ak15/V02d/particle-net.onnx'
 
 srcJets = cms.InputTag('selectedUpdatedPatJetsAK15WithPuppiDaughters')
 # ---------------------------------------------------------
