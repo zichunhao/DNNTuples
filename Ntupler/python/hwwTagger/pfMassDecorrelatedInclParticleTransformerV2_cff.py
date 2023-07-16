@@ -32,7 +32,7 @@ pfMassDecorrelatedInclParticleTransformerV2JetTags = boostedJetONNXJetTagsProduc
         'probQCDbb', 'probQCDcc', 'probQCDb', 'probQCDc', 'probQCDothers', 
         'resonanceMassCorr', 'visiableMassCorr',
     ],
-    debugMode = True,
+    debugMode = False,
 )
 
 # declare all the discriminators
