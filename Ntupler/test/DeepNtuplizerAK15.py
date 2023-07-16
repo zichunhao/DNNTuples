@@ -110,8 +110,9 @@ bTagDiscriminators = [
 
 btagDiscriminatorsCustom = []
 if doCustomTaggerInference:
-    # no custom tagger for ak15 jets for now
-    btagDiscriminatorsCustom = []
+    from DeepNTuples.Ntupler.jetTools import updateJetCollection # use custom updataJetCollection
+    from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV2_cff import _pfMassDecorrelatedInclParticleTransformerAK15V2JetTagsAllSelected
+    btagDiscriminatorsCustom = [] # + _pfMassDecorrelatedInclParticleTransformerAK15V2JetTagsAllSelected
 
 
 JETCorrLevels = ['L2Relative', 'L3Absolute']

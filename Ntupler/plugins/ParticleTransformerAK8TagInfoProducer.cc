@@ -27,10 +27,10 @@
 
 using namespace btagbtvdeep;
 
-class ParticleTransformerV2JetTagInfoProducer : public edm::stream::EDProducer<> {
+class ParticleTransformerAK8TagInfoProducer : public edm::stream::EDProducer<> {
 public:
-  explicit ParticleTransformerV2JetTagInfoProducer(const edm::ParameterSet &);
-  ~ParticleTransformerV2JetTagInfoProducer() override;
+  explicit ParticleTransformerAK8TagInfoProducer(const edm::ParameterSet &);
+  ~ParticleTransformerAK8TagInfoProducer() override;
 
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
@@ -86,7 +86,7 @@ private:
   const reco::Vertex *pv_ = nullptr;
 };
 
-const std::vector<std::string> ParticleTransformerV2JetTagInfoProducer::charged_particle_features_{
+const std::vector<std::string> ParticleTransformerAK8TagInfoProducer::charged_particle_features_{
     "cpfcandlt_puppiw",        "cpfcandlt_hcalFrac",       "cpfcandlt_VTX_ass",      "cpfcandlt_lostInnerHits",
     "cpfcandlt_quality",       "cpfcandlt_charge",         "cpfcandlt_isEl",         "cpfcandlt_isMu",
     "cpfcandlt_isChargedHad",  "cpfcandlt_phirel",
@@ -105,7 +105,7 @@ const std::vector<std::string> ParticleTransformerV2JetTagInfoProducer::charged_
     "cpfcandlt_stripTIDLayersWithMeasurement",    "cpfcandlt_stripTOBLayersWithMeasurement",
     "cpfcandlt_px",            "cpfcandlt_py",             "cpfcandlt_pz",           "cpfcandlt_energy"};
 
-const std::vector<std::string> ParticleTransformerV2JetTagInfoProducer::neutral_particle_features_{
+const std::vector<std::string> ParticleTransformerAK8TagInfoProducer::neutral_particle_features_{
     "npfcand_puppiw",        "npfcand_hcalFrac",       "npfcand_isGamma",      "npfcand_isNeutralHad",
     "npfcand_phirel",
     "npfcand_etarel",        "npfcand_deltaR",         "npfcand_abseta",       "npfcand_ptrel_log",
@@ -113,14 +113,14 @@ const std::vector<std::string> ParticleTransformerV2JetTagInfoProducer::neutral_
     "npfcand_e_log_nopuppi", "npfcand_ptrel",          "npfcand_erel",
     "npfcand_px",            "npfcand_py",             "npfcand_pz",           "npfcand_energy"};
 
-const std::vector<std::string> ParticleTransformerV2JetTagInfoProducer::sv_features_{
+const std::vector<std::string> ParticleTransformerAK8TagInfoProducer::sv_features_{
     "sv_mask", "sv_ptrel",     "sv_erel",     "sv_phirel", "sv_etarel",       "sv_deltaR",  "sv_abseta",
     "sv_mass", "sv_ptrel_log", "sv_erel_log", "sv_pt_log", "sv_pt",           "sv_ntracks", "sv_normchi2",
     "sv_dxy",  "sv_dxysig",    "sv_d3d",      "sv_d3dsig", "sv_costhetasvpv",
     "sv_px",   "sv_py",        "sv_pz",       "sv_energy"
 };
 
-ParticleTransformerV2JetTagInfoProducer::ParticleTransformerV2JetTagInfoProducer(const edm::ParameterSet &iConfig)
+ParticleTransformerAK8TagInfoProducer::ParticleTransformerAK8TagInfoProducer(const edm::ParameterSet &iConfig)
     : jet_radius_(iConfig.getParameter<double>("jet_radius")),
       min_jet_pt_(iConfig.getParameter<double>("min_jet_pt")),
       max_jet_eta_(iConfig.getParameter<double>("max_jet_eta")),
@@ -154,10 +154,10 @@ ParticleTransformerV2JetTagInfoProducer::ParticleTransformerV2JetTagInfoProducer
   produces<DeepBoostedJetTagInfoCollection>();
 }
 
-ParticleTransformerV2JetTagInfoProducer::~ParticleTransformerV2JetTagInfoProducer() {}
+ParticleTransformerAK8TagInfoProducer::~ParticleTransformerAK8TagInfoProducer() {}
 
-void ParticleTransformerV2JetTagInfoProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
-  // pfParticleTransformerV2JetTagInfos
+void ParticleTransformerAK8TagInfoProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+  // pfParticleTransformerAK8TagInfos
   edm::ParameterSetDescription desc;
   desc.add<double>("jet_radius", 0.8);
   desc.add<double>("min_jet_pt", 150);
@@ -176,10 +176,10 @@ void ParticleTransformerV2JetTagInfoProducer::fillDescriptions(edm::Configuratio
   desc.add<edm::InputTag>("jets", edm::InputTag("ak8PFJetsPuppi"));
   desc.add<edm::InputTag>("puppi_value_map", edm::InputTag("puppi"));
   desc.add<edm::InputTag>("vertex_associator", edm::InputTag("primaryVertexAssociation", "original"));
-  descriptions.add("pfParticleTransformerV2JetTagInfos", desc);
+  descriptions.add("pfParticleTransformerAK8TagInfos", desc);
 }
 
-void ParticleTransformerV2JetTagInfoProducer::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
+void ParticleTransformerAK8TagInfoProducer::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   auto output_tag_infos = std::make_unique<DeepBoostedJetTagInfoCollection>();
 
   auto jets = iEvent.getHandle(jet_token_);
@@ -249,7 +249,7 @@ void ParticleTransformerV2JetTagInfoProducer::produce(edm::Event &iEvent, const 
   iEvent.put(std::move(output_tag_infos));
 }
 
-void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJetFeatures &fts, const reco::Jet &jet) {
+void ParticleTransformerAK8TagInfoProducer::fillParticleFeatures(DeepBoostedJetFeatures &fts, const reco::Jet &jet) {
   // require the input to be a pat::Jet
   const auto *patJet = dynamic_cast<const pat::Jet *>(&jet);
   if (!patJet) {
@@ -264,6 +264,8 @@ void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJe
   math::XYZVector jet_dir = jet.momentum().Unit();
   GlobalVector jet_ref_track_dir(jet.px(), jet.py(), jet.pz());
   const float etasign = jet.eta() > 0 ? 1 : -1;
+
+  TrackInfoBuilder trkinfo(track_builder_);
 
   std::map<reco::CandidatePtr::key_type, float> puppi_wgt_cache;
   auto puppiWgt = [&](const reco::CandidatePtr &cand) {
@@ -301,7 +303,6 @@ void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJe
       continue;
     // only when computing the nagative tagger: remove charged candidates with high sip3d
     if (flip_ip_sign_ && cand->charge()) {
-      TrackInfoBuilder trkinfo(track_builder_);
       trkinfo.buildTrackInfo(&(*cand), jet_dir, jet_ref_track_dir, *pv_);
       if (trkinfo.getTrackSip3dSig() > max_sip3dsig_)
         continue;
@@ -327,7 +328,6 @@ void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJe
   if (sort_by_sip2dsig_) {
     // sort charged pf candidates by 2d impact parameter significance
     for (const auto &cand : cpfPtrs) {
-      TrackInfoBuilder trkinfo(track_builder_);
       trkinfo.buildTrackInfo(&(*cand), jet_dir, jet_ref_track_dir, *pv_);
       c_sorted.emplace_back(cand,
                             trkinfo.getTrackSip2dSig(),
@@ -348,9 +348,15 @@ void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJe
                 [&puppi_wgt_cache](const reco::CandidatePtr &a, const reco::CandidatePtr &b) {
                   return puppi_wgt_cache.at(a.key()) * a->pt() > puppi_wgt_cache.at(b.key()) * b->pt();
                 });
+      std::sort(npfPtrs.begin(),
+                npfPtrs.end(),
+                [&puppi_wgt_cache](const reco::CandidatePtr &a, const reco::CandidatePtr &b) {
+                  return puppi_wgt_cache.at(a.key()) * a->pt() > puppi_wgt_cache.at(b.key()) * b->pt();
+                });
     } else {
       // sort by original pt (not Puppi-weighted)
       std::sort(cpfPtrs.begin(), cpfPtrs.end(), [](const auto &a, const auto &b) { return a->pt() > b->pt(); });
+      std::sort(npfPtrs.begin(), npfPtrs.end(), [](const auto &a, const auto &b) { return a->pt() > b->pt(); });
     }
   }
 
@@ -491,7 +497,6 @@ void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJe
       fts.fill("cpfcandlt_dphidxy", cov(2, 3));
       fts.fill("cpfcandlt_dlambdadz", cov(1, 4));
 
-      TrackInfoBuilder trkinfo(track_builder_);
       trkinfo.buildTrackInfo(&(*cand), jet_dir, jet_ref_track_dir, *pv_);
       fts.fill("cpfcandlt_btagEtaRel", trkinfo.getTrackEtaRel());
       fts.fill("cpfcandlt_btagPtRatio", trkinfo.getTrackPtRatio());
@@ -597,7 +602,7 @@ void ParticleTransformerV2JetTagInfoProducer::fillParticleFeatures(DeepBoostedJe
   }
 }
 
-void ParticleTransformerV2JetTagInfoProducer::fillSVFeatures(DeepBoostedJetFeatures &fts, const reco::Jet &jet) {
+void ParticleTransformerAK8TagInfoProducer::fillSVFeatures(DeepBoostedJetFeatures &fts, const reco::Jet &jet) {
   std::vector<const reco::VertexCompositePtrCandidate *> jetSVs;
   for (const auto &sv : *svs_) {
     if (reco::deltaR2(sv, jet) < jet_radius_ * jet_radius_) {
@@ -621,6 +626,12 @@ void ParticleTransformerV2JetTagInfoProducer::fillSVFeatures(DeepBoostedJetFeatu
   for (const auto *sv : jetSVs) {
     // basic kinematics
     fts.fill("sv_mask", 1);
+
+    fts.fill("sv_px", sv->px());
+    fts.fill("sv_py", sv->py());
+    fts.fill("sv_pz", sv->pz());
+    fts.fill("sv_energy", sv->energy());
+
     fts.fill("sv_phirel", reco::deltaPhi(*sv, jet));
     fts.fill("sv_etarel", etasign * (sv->eta() - jet.eta()));
     fts.fill("sv_deltaR", reco::deltaR(*sv, jet));
@@ -647,19 +658,8 @@ void ParticleTransformerV2JetTagInfoProducer::fillSVFeatures(DeepBoostedJetFeatu
     fts.fill("sv_d3dsig", d3d.significance());
 
     fts.fill("sv_costhetasvpv", (flip_ip_sign_ ? -1.f : 1.f) * vertexDdotP(*sv, *pv_));
-
-    // temporary workaround for the early training of ParT: recover (px, py, pz, E) by (pt, eta, phi, E)
-    ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiE4D<float> > svp4;
-    svp4.SetPt(sv->pt());
-    svp4.SetEta(sv->eta());
-    svp4.SetPhi(reco::deltaPhi(*sv, jet));
-    svp4.SetE(std::exp(std::log(sv->energy())));
-    fts.fill("sv_px", svp4.Px());
-    fts.fill("sv_py", svp4.Py());
-    fts.fill("sv_pz", svp4.Pz());
-    fts.fill("sv_energy", svp4.E());
   }
 }
 
 // define this as a plug-in
-DEFINE_FWK_MODULE(ParticleTransformerV2JetTagInfoProducer);
+DEFINE_FWK_MODULE(ParticleTransformerAK8TagInfoProducer);
