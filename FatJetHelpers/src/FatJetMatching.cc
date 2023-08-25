@@ -43,7 +43,7 @@ void FatJetMatching::flavorLabel(const pat::Jet* jet,
       if (getResult().label != "Invalid"){
         return;
       }
-    }else if (pdgid == ParticleID::p_h0 || pdgid == ParticleID::p_H0 || pdgid == ParticleID::p_Hplus || pdgid == ParticleID::p_Hbsm){
+    }else if (pdgid == ParticleID::p_h0 || pdgid == ParticleID::p_H0 || pdgid == ParticleID::p_Hplus || pdgid == ParticleID::p_Hbsm || pdgid == ParticleID::p_LQbsm){
       found_higgs = true;
       // Higgs found in the record so we'll stop recongnizing
       // following W or Zs as Higgs (in case of HWW/ZZ)
@@ -550,20 +550,23 @@ void FatJetMatching::higgs_label(const pat::Jet* jet, const reco::GenParticle *p
     cout << "H:   "; printGenParticleInfo(higgs, -1);
   }
 
-  enum HDecay {h_2p, h_tautau, h_WW, h_ZZ, h_null};
+  enum HDecay {h_2p, h_tautau, h_qtau, h_WW, h_ZZ, h_null};
   HDecay hdecay = h_null;
   auto hdaus = getDaughters(higgs);
   if (higgs->numberOfDaughters() >= 3) {
     // e.g., h->Vqq or h->qqqq
     throw std::runtime_error("[FatJetMatching::higgs_label] H decays to 3/4 objects: not implemented");
   }else {
-    auto pdgid = std::abs(hdaus.at(0)->pdgId());
-    if (pdgid == ParticleID::p_Wplus) {
+    auto pdgid1 = std::abs(hdaus.at(0)->pdgId()), pdgid2 = std::abs(hdaus.at(1)->pdgId());
+    if (pdgid1 == ParticleID::p_Wplus && pdgid2 == ParticleID::p_Wplus) {
       hdecay = h_WW;
-    }else if (pdgid == ParticleID::p_Z0) {
+    }else if (pdgid1 == ParticleID::p_Z0 && pdgid2 == ParticleID::p_Z0) {
       hdecay = h_ZZ;
-    }else if (pdgid == ParticleID::p_tauminus) {
+    }else if (pdgid1 == ParticleID::p_tauminus && pdgid2 == ParticleID::p_tauminus) {
       hdecay = h_tautau;
+    }else if (((pdgid1 >= ParticleID::p_u && pdgid1 <= ParticleID::p_b) && pdgid2 == ParticleID::p_tauminus) || 
+              ((pdgid2 >= ParticleID::p_u && pdgid2 <= ParticleID::p_b) && pdgid1 == ParticleID::p_tauminus)) {
+      hdecay = h_qtau;
     }else {
       hdecay = h_2p;
     }
@@ -716,6 +719,57 @@ void FatJetMatching::higgs_label(const pat::Jet* jet, const reco::GenParticle *p
         }else if (tau2_daus_info.second == 2 && dr_tau2 < distR){
           getResult().particles.insert(getResult().particles.end(), tau2_daus_info.first.begin(), tau2_daus_info.first.end());
           getResult().label = "H_tauhtauh";
+        }
+      }
+      return;
+    }
+  }else if (hdecay == h_qtau) { // customized categories
+    if (hdaus.size() == 2){
+      // resonance -> qtau
+      if (std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_tauminus){
+        std::swap(hdaus.at(0), hdaus.at(1));
+      }
+      double dr_q      = reco::deltaR(jet->p4(), hdaus.at(0)->p4());
+      double dr_tau    = reco::deltaR(jet->p4(), hdaus.at(1)->p4());
+
+      auto tau_daus_info = getTauDaughters(hdaus.at(1));
+
+      if (debug_){
+        using namespace std;
+        cout << "tau decay ID: " << tau_daus_info.second << endl;
+        cout << "deltaR(jet, q)      : " << dr_q << endl;
+        cout << "deltaR(jet, tau)    : " << dr_tau << endl;
+        cout << "deltaR(jet, tau-dau): " << reco::deltaR(tau_daus_info.first.at(0)->p4(), jet->p4()) << endl;
+      }
+
+      if (dr_q < distR){
+        // check the quark type
+        std::string qtype = "";
+        if (std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_b) {
+          qtype = "b";
+        }else if (std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_c) {
+          qtype = "c";
+        }else if (std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_s) {
+          qtype = "s";
+        }else if (std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_u || std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_d) {
+          qtype = "q";
+        }else if (std::abs(hdaus.at(0)->pdgId()) == ParticleID::p_g) {
+          qtype = "g";
+        }
+        // push the first quark
+        getResult().particles.push_back(hdaus.at(0));
+
+        // inspect the tau
+        if ((tau_daus_info.second == 0 || tau_daus_info.second == 1) && reco::deltaR(tau_daus_info.first.at(0)->p4(), jet->p4()) < distR){
+          getResult().particles.push_back(tau_daus_info.first.at(0));
+          if (tau_daus_info.second == 0) {
+            getResult().label = "Cust_" + qtype + "taue";
+          }else {
+            getResult().label = "Cust_" + qtype + "taum";
+          }
+        }else if (tau_daus_info.second == 2 && dr_tau < distR){
+          getResult().particles.insert(getResult().particles.end(), tau_daus_info.first.begin(), tau_daus_info.first.end());
+          getResult().label = "Cust_" + qtype + "tauh";
         }
       }
       return;

@@ -74,6 +74,7 @@ private:
     "bbb", "bbc", "bbs", "bbq", "ccb", "ccc", "ccs", "ccq", "ssb", "ssc", "sss", "ssq", "qqb", "qqc", "qqs", "qqq",
     "bbee", "bbmm", "bbe", "bbm", "bee", "bmm", "bbtauhtaue", "bbtauhtaum", "bbtauhtauh", "btauhtaue", "btauhtaum", "btauhtauh", "ccee", "ccmm", "cce", "ccm", "cee", "cmm", "cctauhtaue", "cctauhtaum", "cctauhtauh", "ctauhtaue", "ctauhtaum", "ctauhtauh", "ssee", "ssmm", "sse", "ssm", "see", "smm", "sstauhtaue", "sstauhtaum", "sstauhtauh", "stauhtaue", "stauhtaum", "stauhtauh", "qqee", "qqmm", "qqe", "qqm", "qee", "qmm", "qqtauhtaue", "qqtauhtaum", "qqtauhtauh", "qtauhtaue", "qtauhtaum", "qtauhtauh"};
   std::vector<std::string> labelQCD_ = {"bb", "cc", "b", "c", "others"};
+  std::vector<std::string> labelCust_ = {"btaue", "btaum", "btauh"};
   std::vector<std::string> labels_ = {};
 
 };

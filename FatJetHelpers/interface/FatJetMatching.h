@@ -34,6 +34,7 @@ enum PdgId { p_unknown, p_d, p_u, p_s, p_c, p_b, p_t, p_bprime, p_tprime,
   p_sigmabminus = 5112, p_lambdab0 = 5122, p_xibminus = 5132, p_sigmab0 = 5212, p_sigmabplus = 5222,
   p_xib0 = 5232, p_omegabminus = 5332,
   p_Hbsm = 5000003,
+  p_LQbsm = 9000002,
 };
 }
 

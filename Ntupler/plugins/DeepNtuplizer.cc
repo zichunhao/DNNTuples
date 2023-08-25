@@ -48,6 +48,8 @@ private:
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetNoNuMatchToken_;
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetNoNuSoftDropMatchToken_;
 
+  bool addLowLevel_;
+
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
 
@@ -65,7 +67,8 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsWithNuMatch"))),
     genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsWithNuSoftDropMatch"))),
     genJetNoNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsNoNuMatch"))),
-    genJetNoNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsNoNuSoftDropMatch")))
+    genJetNoNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsNoNuSoftDropMatch"))),
+    addLowLevel_(iConfig.getUntrackedParameter<bool>("addLowLevel", true))
 {
 
   // register modules
@@ -75,11 +78,13 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
   FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
   addModule(fjinfo);
 
-  SVFiller *sv = new SVFiller("", jetR);
-  addModule(sv);
+  if (addLowLevel_) {
+    SVFiller *sv = new SVFiller("", jetR);
+    addModule(sv);
 
-  PFCompleteFiller *parts = new PFCompleteFiller("", jetR);
-  addModule(parts);
+    PFCompleteFiller *parts = new PFCompleteFiller("", jetR);
+    addModule(parts);
+  }
 
   // read config and init modules
   for(auto& m: modules_)

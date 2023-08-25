@@ -19,8 +19,9 @@ options.outputFile = 'output.root'
 # options.inputFiles = '/store/group/cmst3/group/vhcc/sfTuples/20220523_HWW_JHUVariableWMass/2017/mc/BulkGravitonToHHTo4W_MX-600to6000_MH-15to250_JHUVariableWMass_part2/DNNTuples_PrivateMC/220523_095639/0002/miniv2_2420.root' ## HWW 2
 # options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4W_MX-600to6000_MH-15to250_JHUVariableWMass2DMesh/20UL17MiniAODv2/part2/miniv2_15683018-4322.root' ## HWW 2dmesh
 # options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass/20UL17MiniAODv2/part3/miniv2_15820048-548.root' ## HZZ 1
-options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass/20UL17MiniAODv2/part3/miniv2_15820048-549.root' ## HZZ 2
+# options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass/20UL17MiniAODv2/part3/miniv2_15820048-549.root' ## HZZ 2
 # options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/BulkGravitonToHHTo4Z_MX-600to6000_MH-15to250_JHUVariableZMass2DMesh/20UL17MiniAODv2/part2/miniv2_15822201-2585.root' ## HZZ 2dmesh
+options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/PairVectorLQ_LQToBTau_HT-600to6000_M-15to250/20UL17MiniAODv2/miniv2_16076647-1.root' ## customized btau
 # options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToZZToZhadZhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/110000/DABA0ABE-8F97-9747-9A7A-4E31435442E1.root' ## Zqq inference
 # options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToWWToWhadWhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/260000/F1F668E3-CB4A-ED4E-9493-3485628D5059.root'  ## Wqq inference
 
@@ -34,6 +35,9 @@ options.register('inputDataset',
                  "Input dataset")
 options.register('isTrainSample', True, VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool, "if the sample is used for training")
+# special output configs
+options.register('addMET', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "add MET vars to output file")
+options.register('addLowLevel', True, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "add low-level vars to output file")
 
 options.parseArguments()
 
@@ -151,13 +155,17 @@ bTagDiscriminators = [
 
 subjetBTagDiscriminators = ['None']
 
-btagDiscriminatorsCustom = []
+# from dnntuple v9: infer the new tagger so as to store the hidden layer scores in a special branch jet_custom_discs
+from DeepNTuples.Ntupler.jetTools import updateJetCollection # use custom updataJetCollection
+from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV2_cff import _pfMassDecorrelatedInclParticleTransformerV2HidLayerJetTagsProbsHidNeurons
+btagDiscriminatorsCustomSaveAsCompact = _pfMassDecorrelatedInclParticleTransformerV2HidLayerJetTagsProbsHidNeurons
+btagDiscriminatorsCustomSaveAsSeparate = []
+
 if doCustomTaggerInference:
-    from DeepNTuples.Ntupler.jetTools import updateJetCollection # use custom updataJetCollection
     from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedDeepHWWV1_cff import _pfMassDecorrelatedDeepHWWV1JetTagsAll
     from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV1_cff import _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll
-    from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV2_cff import _pfMassDecorrelatedInclParticleTransformerV2JetTagsAll
-    btagDiscriminatorsCustom = _pfMassDecorrelatedDeepHWWV1JetTagsAll + _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll # + _pfMassDecorrelatedInclParticleTransformerV2JetTagsAll
+    from DeepNTuples.Ntupler.hwwTagger.pfMassDecorrelatedInclParticleTransformerV2_cff import _pfMassDecorrelatedInclParticleTransformerV2HidLayerJetTagsProbsRawScores
+    btagDiscriminatorsCustomSaveAsSeparate += _pfMassDecorrelatedDeepHWWV1JetTagsAll + _pfMassDecorrelatedInclParticleTransformerV1JetTagsAll + _pfMassDecorrelatedInclParticleTransformerV2HidLayerJetTagsProbsRawScores
 
 if useReclusteredJets:
     JETCorrLevels = ['L2Relative', 'L3Absolute']
@@ -174,7 +182,7 @@ if useReclusteredJets:
         jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom,
+        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsCompact + btagDiscriminatorsCustomSaveAsSeparate,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
@@ -184,7 +192,7 @@ else:
         jetSource=cms.InputTag('slimmedJetsAK8'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom,
+        btagDiscriminators=pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsCompact + btagDiscriminatorsCustomSaveAsSeparate,
     )
     srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
@@ -261,7 +269,8 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustom
+process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsSeparate
+process.deepntuplizer.bDiscriminatorsCompactSave = btagDiscriminatorsCustomSaveAsCompact
 
 process.deepntuplizer.genJetsWithNuMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsWithNuSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
@@ -279,6 +288,10 @@ process.deepntuplizer.isHerwig = 'herwig' in _inputfile.lower()
 process.deepntuplizer.isMadGraph = 'madgraph' in _inputfile.lower()
 
 process.deepntuplizer.isTrainSample = options.isTrainSample
+
+# special output configs
+process.deepntuplizer.addMET = options.addMET
+process.deepntuplizer.addLowLevel = options.addLowLevel
 #==============================================================================================================================#
 process.p = cms.Path(process.deepntuplizer)
 process.p.associate(patTask)

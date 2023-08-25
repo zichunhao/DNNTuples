@@ -20,6 +20,7 @@ void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCo
   isTTBarSample_ = iConfig.getUntrackedParameter<bool>("isTTBarSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
   btag_discriminators_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminators");
+  bDiscriminatorsCompactSave_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminatorsCompactSave");
 
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
   puToken_ = cc.consumes<std::vector<PileupSummaryInfo>>(iConfig.getParameter<edm::InputTag>("puInfo"));
@@ -110,6 +111,13 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
     }
   }
 
+  // special jet scores
+  if (!bDiscriminatorsCompactSave_.empty()) {
+    for (const auto& disc : bDiscriminatorsCompactSave_) {
+      data.fillMulti<float>("jet_custom_discs", catchInfs(jet.bDiscriminator(disc), -99));
+    }
+  }
+
   return true;
 }
 
@@ -158,6 +166,10 @@ void JetInfoFiller::book() {
       std::replace(name.begin(), name.end(), ':', '_');
       data.add<float>(name, 0);
     }
+  }
+
+  if (!bDiscriminatorsCompactSave_.empty()) {
+    data.addMulti<float>("jet_custom_discs");
   }
 }
 

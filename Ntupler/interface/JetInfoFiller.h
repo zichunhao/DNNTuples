@@ -47,6 +47,7 @@ private:
   bool isTTBarSample_ = false;
   bool isTrainSample_ = false;
   std::vector<std::string> btag_discriminators_;
+  std::vector<std::string> bDiscriminatorsCompactSave_;
 
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<std::vector<PileupSummaryInfo>> puToken_;
