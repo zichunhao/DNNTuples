@@ -52,7 +52,8 @@ void FatJetMatching::flavorLabel(const pat::Jet* jet,
       if (getResult().label != "Invalid"){
         return;
       }
-    }else if (!found_higgs && (pdgid == ParticleID::p_Wplus || pdgid == ParticleID::p_Z0)){
+    }else if (!found_higgs && isMDTagger && (pdgid == ParticleID::p_Wplus || pdgid == ParticleID::p_Z0)){
+      // for MD tagger, treat W/Z boson also as a Higgs boson
       clearResult();
       higgs_label(jet, gp, distR);
       if (getResult().label != "Invalid"){

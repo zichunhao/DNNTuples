@@ -60,6 +60,7 @@ void FatJetInfoFiller::book() {
       for (auto& l: labelH2p_)  labels_.push_back("H_" + l);
       for (auto& l: labelW_)    labels_.push_back("W_" + l);
       for (auto& l: labelZ_)    labels_.push_back("Z_" + l);
+      for (auto& l: labelQCD_)  labels_.push_back("QCD_" + l);
     }
 
     if (debug_) {

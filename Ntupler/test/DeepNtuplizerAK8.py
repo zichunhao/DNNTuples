@@ -24,6 +24,7 @@ options.outputFile = 'output.root'
 options.inputFiles = '/store/cmst3/group/vhcc/sfTuples/PairVectorLQ_LQToBTau_HT-600to6000_M-15to250/20UL17MiniAODv2/miniv2_16076647-1.root' ## customized btau
 # options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToZZToZhadZhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/110000/DABA0ABE-8F97-9747-9A7A-4E31435442E1.root' ## Zqq inference
 # options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/BulkGravToWWToWhadWhad_narrow_M-1000_TuneCP5_13TeV-madgraph-pythia/MINIAODSIM/106X_mc2017_realistic_v9-v2/260000/F1F668E3-CB4A-ED4E-9493-3485628D5059.root'  ## Wqq inference
+# options.inputFiles = '/store/mc/RunIISummer20UL17MiniAODv2/ZprimeToTT_M1200_W12_TuneCP2_PSweights_13TeV-madgraph-pythiaMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/230000/29D33B74-575C-2F41-B527-495528DB9990.root'  ## SM top
 
 options.maxEvents = -1
 
@@ -38,6 +39,7 @@ options.register('isTrainSample', True, VarParsing.multiplicity.singleton,
 # special output configs
 options.register('addMET', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "add MET vars to output file")
 options.register('addLowLevel', True, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "add low-level vars to output file")
+options.register('isMDTagger', True, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "use MD tagger categorisation")
 
 options.parseArguments()
 
@@ -292,6 +294,7 @@ process.deepntuplizer.isTrainSample = options.isTrainSample
 # special output configs
 process.deepntuplizer.addMET = options.addMET
 process.deepntuplizer.addLowLevel = options.addLowLevel
+process.deepntuplizer.isMDTagger = options.isMDTagger
 #==============================================================================================================================#
 process.p = cms.Path(process.deepntuplizer)
 process.p.associate(patTask)
