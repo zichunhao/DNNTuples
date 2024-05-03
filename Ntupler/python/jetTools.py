@@ -1,5 +1,10 @@
 from __future__ import print_function
-from FWCore.GuiBrowsers.ConfigToolBase import *
+try:
+    # CMSSW_11_1_X and later
+    from PhysicsTools.PatAlgos.tools.ConfigToolBase import *
+except ImportError:
+    # CMSSW_11_0_X and older
+    from FWCore.GuiBrowsers.ConfigToolBase import *
 from FWCore.ParameterSet.Mixins import PrintOptions,_ParameterTypeBase,_SimpleParameterTypeBase, _Parameterizable, _ConfigureComponent, _TypedParameterizable, _Labelable,  _Unlabelable,  _ValidatingListBase
 from FWCore.ParameterSet.SequenceTypes import _ModuleSequenceType, _Sequenceable
 from FWCore.ParameterSet.SequenceTypes import *
