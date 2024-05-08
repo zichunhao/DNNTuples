@@ -63,6 +63,8 @@ private:
   edm::EDGetTokenT<SVCollection> sv_token_;
   edm::EDGetTokenT<CandidateView> pfcand_token_;
 
+  edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> track_builder_token_;
+
   bool use_puppi_value_map_;
   bool use_pvasq_value_map_;
 
@@ -120,8 +122,10 @@ CustomDeepBoostedJetTagInfoProducer::CustomDeepBoostedJetTagInfoProducer(const e
       vtx_token_(consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
       sv_token_(consumes<SVCollection>(iConfig.getParameter<edm::InputTag>("secondary_vertices"))),
       pfcand_token_(consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("pf_candidates"))),
+      track_builder_token_(esConsumes<TransientTrackBuilder, TransientTrackRecord>(edm::ESInputTag("", "TransientTrackBuilder"))),
       use_puppi_value_map_(false),
       use_pvasq_value_map_(false) {
+  produces<std::vector<reco::DeepBoostedJetTagInfo>>();
   const auto &puppi_value_map_tag = iConfig.getParameter<edm::InputTag>("puppi_value_map");
   if (!puppi_value_map_tag.label().empty()) {
     puppi_value_map_token_ = consumes<edm::ValueMap<float>>(puppi_value_map_tag);
@@ -180,7 +184,9 @@ void CustomDeepBoostedJetTagInfoProducer::produce(edm::Event &iEvent, const edm:
 
   iEvent.getByToken(pfcand_token_, pfcands_);
 
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", track_builder_);
+  // iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", track_builder_);
+  // for CMSSW 13_0_X
+  track_builder_ = iSetup.getHandle(track_builder_token_);
 
   if (use_puppi_value_map_) {
     iEvent.getByToken(puppi_value_map_token_, puppi_value_map_);
