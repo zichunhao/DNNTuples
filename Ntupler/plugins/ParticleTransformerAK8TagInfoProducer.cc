@@ -140,7 +140,8 @@ ParticleTransformerAK8TagInfoProducer::ParticleTransformerAK8TagInfoProducer(con
       lt_token_(consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("lost_tracks"))),
       track_builder_token_(esConsumes<TransientTrackBuilder, TransientTrackRecord>(edm::ESInputTag("", "TransientTrackBuilder"))),
       use_puppi_value_map_(false),
-      use_pvasq_value_map_(false) {
+      use_pvasq_value_map_(false) 
+{
   produces<std::vector<reco::DeepBoostedJetTagInfo>>();
 
   const auto &puppi_value_map_tag = iConfig.getParameter<edm::InputTag>("puppi_value_map");
