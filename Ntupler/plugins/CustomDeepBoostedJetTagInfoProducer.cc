@@ -126,7 +126,6 @@ CustomDeepBoostedJetTagInfoProducer::CustomDeepBoostedJetTagInfoProducer(const e
       use_puppi_value_map_(false),
       use_pvasq_value_map_(false) 
 {
-  produces<std::vector<reco::DeepBoostedJetTagInfo>>();
   const auto &puppi_value_map_tag = iConfig.getParameter<edm::InputTag>("puppi_value_map");
   if (!puppi_value_map_tag.label().empty()) {
     puppi_value_map_token_ = consumes<edm::ValueMap<float>>(puppi_value_map_tag);
