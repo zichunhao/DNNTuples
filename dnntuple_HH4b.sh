@@ -1,9 +1,12 @@
-set -xe;
 DATA_NUM=$1
 EOSPATH=$2
 WORKDIR=`pwd`
+echo "DATA_NUM: $DATA_NUM"
+echo "EOSPATH: $EOSPATH"
+echo "WORKDIR: $WORKDIR"
 
 # Setup CMSSW
+echo "Setting up CMSSW"
 export SCRAM_ARCH=el8_amd64_gcc11
 export RELEASE_DNN=CMSSW_13_0_13
 if [ -r $RELEASE_DNN/src ] ; then
@@ -16,6 +19,7 @@ cd $RELEASE_DNN/src
 eval `scram runtime -sh`
 
 # Install the DeepNTuples package
+echo "Installing DNNTuples"
 git cms-addpkg PhysicsTools/ONNXRuntime
 # clone this repo into "DeepNTuples" directory
 if ! [ -d DeepNTuples ]; then
@@ -31,10 +35,12 @@ inputfile=`sed "${DATA_NUM}q;d" dataset.txt`
 # Must run inside the test folder..
 cd Ntupler/test/;
 filename=`basename $inputfile`
-cmsRun DeepNtuplizerAK8.py inputFiles="${inputfile}" outputFile="${WORKDIR}"/${filename}.root
+echo "Running DeepNtuplizerAK8.py on $inputfile"
+echo "cmsRun DeepNtuplizerAK8.py inputFiles=${inputfile} outputFile=${WORKDIR}/${filename}"
+cmsRun DeepNtuplizerAK8.py inputFiles="${inputfile}" outputFile="${WORKDIR}"/${filename}
 
-echo "xrdcp -f ${filename}.root ${EOSPATH}/${filename}"
-xrdcp -f ${filename}.root ${EOSPATH}/${filename}
+echo "xrdcp -f ${filename} ${EOSPATH}/${filename}"
+xrdcp -f ${filename} ${EOSPATH}/${filename}
 
 cd $WORKDIR;
 touch dummy.cc
