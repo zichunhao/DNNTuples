@@ -1,5 +1,6 @@
+set -xe;
 DATA_NUM=$1
-EOS_PATH=$2
+EOSPATH=$2
 WORKDIR=`pwd`
 
 # Setup CMSSW
@@ -24,15 +25,17 @@ fi
 curl -s --retry 10 https://coli.web.cern.ch/coli/tmp/.230626-003937_partv2_model/ak8/V02-HidLayer/model_embed.onnx -o $CMSSW_BASE/src/DeepNTuples/Ntupler/data/InclParticleTransformer-MD/ak8/V02-HidLayer/model_embed.onnx
 scram b -j $NTHREAD
 
-# Must run inside the test folder..
-cd DeepNTuples/Ntupler/test/;
 # read line number $DATA_NUM from the file
+cd DeepNTuples;
 inputfile=`sed "${DATA_NUM}q;d" dataset.txt`
+# Must run inside the test folder..
+cd Ntupler/test/;
 filename=`basename $inputfile`
 cmsRun DeepNtuplizerAK8.py inputFiles="${inputfile}" outputFile="${WORKDIR}"/${filename}.root
 
-echo "xrdcp -f ${filename}.root ${EOS_PATH}/${filename}.root"
-xrdcp -f ${filename}.root ${EOS_PATH}/${filename}.root
+echo "xrdcp -f ${filename}.root ${EOSPATH}/${filename}.root"
+xrdcp -f ${filename}.root ${EOSPATH}/${filename}.root
 
+cd $WORKDIR;
 touch dummy.cc
 echo "Done"
