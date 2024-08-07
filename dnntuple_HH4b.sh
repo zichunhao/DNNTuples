@@ -42,9 +42,12 @@ echo "Running DeepNtuplizerAK8.py on $inputfile"
 echo "cmsRun DeepNtuplizerAK8.py inputFiles=${inputfile} outputFile=${WORKDIR}/${filename}"
 cmsRun DeepNtuplizerAK8.py inputFiles="${inputfile}" outputFile="${WORKDIR}"/${filename}
 
-echo "xrdcp -f ${filename} ${EOSPATH}/${filename}"
-xrdcp -f ${filename} ${EOSPATH}/${filename}
-
 cd $WORKDIR;
+echo "ls -lah"
+ls -lah
+
+echo "xrdcp -f ${WORKDIR}/${filename} ${EOSPATH}/${filename}"
+xrdcp -f ${WORKDIR}/${filename} ${EOSPATH}/${filename}
+
 touch dummy.cc
 echo "Done"
