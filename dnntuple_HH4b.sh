@@ -1,3 +1,5 @@
+#!/bin/bash -xe
+
 DATA_NUM=$1
 EOSPATH=$2
 WORKDIR=`pwd`
