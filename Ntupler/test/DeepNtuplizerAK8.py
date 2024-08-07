@@ -49,6 +49,7 @@ globalTagMap = {
     'auto': 'auto:phase1_2018_realistic',
     'UL18': '106X_upgrade2018_realistic_v16_L1v1',
     'UL17': '106X_mc2017_realistic_v9',
+    'UL23': '130X_mcRun3_2023_realistic_v15',
 }
 
 ## current workflow: only run interactively
@@ -64,6 +65,8 @@ if options.inputDataset == '':
         era = 'UL17'
     elif '2018/' in _inputfile or 'UL18' in _inputfile:
         era = 'UL18'
+    elif 'Run3Summer23' in _inputfile or 'UL23' in _inputfile:
+        era = 'UL23'
 print('++era: ', era)
 # ---------------------------------------------------------
 process = cms.Process("DNNFiller")
