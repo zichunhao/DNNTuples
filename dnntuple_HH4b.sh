@@ -6,9 +6,9 @@ echo "EOSPATH: $EOSPATH"
 echo "WORKDIR: $WORKDIR"
 
 # Setup CMSSW
-echo "Setting up CMSSW"
 export SCRAM_ARCH=el8_amd64_gcc11
 export RELEASE_DNN=CMSSW_13_0_13
+echo "Setting up $RELEASE_DNN"
 if [ -r $RELEASE_DNN/src ] ; then
   echo release $RELEASE_DNN already exists
 else
