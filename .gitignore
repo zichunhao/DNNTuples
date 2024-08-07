@@ -1,6 +1,7 @@
 *.*~
 *.log
 *.txt
+!dataset.txt
 *.out
 *.root
 #*.*#
