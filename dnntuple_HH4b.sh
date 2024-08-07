@@ -33,8 +33,8 @@ cd Ntupler/test/;
 filename=`basename $inputfile`
 cmsRun DeepNtuplizerAK8.py inputFiles="${inputfile}" outputFile="${WORKDIR}"/${filename}.root
 
-echo "xrdcp -f ${filename}.root ${EOSPATH}/${filename}.root"
-xrdcp -f ${filename}.root ${EOSPATH}/${filename}.root
+echo "xrdcp -f ${filename}.root ${EOSPATH}/${filename}"
+xrdcp -f ${filename}.root ${EOSPATH}/${filename}
 
 cd $WORKDIR;
 touch dummy.cc
