@@ -1,5 +1,5 @@
 Universe   = vanilla
-Executable = dnntuple.sh
+Executable = dnntuple_HH4b.sh
 
 +ProjectName="cms.org.cern"
 
