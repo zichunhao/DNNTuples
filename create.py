@@ -178,7 +178,7 @@ def main():
     create_eos_directory(eos_dir)
 
     condor_script = get_condor_script(
-        n_lines=n_files,
+        n_files=n_lines,
         eos_subdir=args.eos_subdir,
         job_dir=job_dir,
         request_cpus=args.request_cpus,
