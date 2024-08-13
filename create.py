@@ -11,6 +11,7 @@ def get_condor_script(
     request_cpus: int = 1,
     request_memory: int = 2000,
     n_thread: int = 1,
+    max_retries: int = 5,
 ) -> str:
     return textwrap.dedent(
         f"""
@@ -37,6 +38,9 @@ def get_condor_script(
     Output     = {job_dir}/log/out-$(Cluster)-$(Process).out
     Error      = {job_dir}/log/err-$(Cluster)-$(Process).err
 
+    on_exit_remove   = (ExitBySignal == False) && (ExitCode == 0)
+    max_retries      = {max_retries}
+    requirements     = Machine =!= LastRemoteHost
     should_transfer_files   = YES
     when_to_transfer_output = ON_EXIT_OR_EVICT
     transfer_output_files   = dummy.cc
@@ -167,6 +171,9 @@ def main():
     parser.add_argument(
         "--n-thread", type=int, default=1, help="Number of threads to run the job"
     )
+    parser.add_argument(
+        "--max-retries", type=int, default=5, help="Maximum number of retries for the job"
+    )
     args = parser.parse_args()
 
     job_dir = (Path(args.job_dir) / args.job_tag).resolve()
@@ -184,6 +191,7 @@ def main():
         request_cpus=args.request_cpus,
         request_memory=args.request_memory,
         n_thread=args.n_thread,
+        max_retries=args.max_retries,
     )
     write_condor_script(job_dir, condor_script)
 
