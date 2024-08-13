@@ -179,6 +179,19 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_relptdiff", 0);
   data.add<float>("fj_sdn2", 0);
 
+  // ParticleNet scores
+  data.add<float>("fj_particleNetv2_massCorr", 0);
+  data.add<float>("fj_particleNetv2_XbbVsQCD", 0);
+  data.add<float>("fj_particleNetv2_Xbb", 0);
+  data.add<float>("fj_particleNetv2_QCD2HF", 0);
+  data.add<float>("fj_particleNetv2_QCD1HF", 0);
+  data.add<float>("fj_particleNetv2_QCD0HF", 0);
+
+  data.add<float>("fj_particleNetLegacy_mass", 0);
+  data.add<float>("fj_particleNetLegacy_Xbb", 0);
+  data.add<float>("fj_particleNetLegacy_QCD2HF", 0);
+  data.add<float>("fj_particleNetLegacy_QCD1HF", 0);
+  data.add<float>("fj_particleNetLegacy_QCD0HF", 0);
 
   //double-b
   data.add<float>("fj_doubleb", 0);
@@ -425,6 +438,19 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     if (debug_) std::cout << "   gen jet nomu sdmass " << pos(sdgenjetnomu->mass()) << std::endl;
   }
 
+  // ParticleNet scores
+  data.fill<float>("fj_particleNetv2_massCorr", jet.bDiscriminator("pfParticleNetFromMiniAODAK8JetTags:masscorr"));
+  data.fill<float>("fj_particleNetv2_XbbVsQCD", jet.bDiscriminator("pfParticleNetFromMiniAODAK8DiscriminatorsJetTags:HbbvsQCD"));
+  data.fill<float>("fj_particleNetv2_Xbb", jet.bDiscriminator("pfParticleNetFromMiniAODAK8JetTags:probHbb"));
+  data.fill<float>("fj_particleNetv2_QCD2HF", jet.bDiscriminator("pfParticleNetFromMiniAODAK8JetTags:probQCD2hf"));
+  data.fill<float>("fj_particleNetv2_QCD1HF", jet.bDiscriminator("pfParticleNetFromMiniAODAK8JetTags:probQCD1hf"));
+  data.fill<float>("fj_particleNetv2_QCD0HF", jet.bDiscriminator("pfParticleNetFromMiniAODAK8JetTags:probQCD0hf"));
+
+  data.fill<float>("fj_particleNetLegacy_mass", jet.bDiscriminator("pfParticleNetMassRegressionJetTags:mass"));
+  data.fill<float>("fj_particleNetLegacy_Xbb", jet.bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXbb"));
+  data.fill<float>("fj_particleNetLegacy_QCD2HF", jet.bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDbb") + jet.bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDcc"));
+  data.fill<float>("fj_particleNetLegacy_QCD1HF", jet.bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDb") + jet.bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDc"));
+  data.fill<float>("fj_particleNetLegacy_QCD0HF", jet.bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDothers"));
 
   // --------
   // double-b

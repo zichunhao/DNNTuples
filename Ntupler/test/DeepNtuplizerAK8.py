@@ -158,6 +158,13 @@ bTagDiscriminators = [
     # 'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
 ]
 
+from RecoBTag.ONNXRuntime.pfParticleNetFromMiniAODAK8_cff import _pfParticleNetFromMiniAODAK8JetTagsAll as pfParticleNetFromMiniAODAK8JetTagsAll
+from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfMassDecorrelatedParticleNetJetTagsProbs as pfMassDecorrelatedParticleNetJetTagsProbs
+bTagDiscriminators += pfParticleNetJetTagsAll
+bTagDiscriminators += pfMassDecorrelatedParticleNetJetTagsProbs
+bTagDiscriminators += pfParticleNetFromMiniAODAK8JetTagsAll
+bTagDiscriminators += pfParticleNetMassRegressionOutputs
+
 subjetBTagDiscriminators = ['None']
 
 # from dnntuple v9: infer the new tagger so as to store the hidden layer scores in a special branch jet_custom_discs
@@ -187,7 +194,7 @@ if useReclusteredJets:
         jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll + pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsCompact + btagDiscriminatorsCustomSaveAsSeparate,
+        btagDiscriminators=pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsCompact + btagDiscriminatorsCustomSaveAsSeparate + pfParticleNetFromMiniAODAK8JetTagsAll + pfParticleNetJetTagsAll,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
@@ -197,7 +204,7 @@ else:
         jetSource=cms.InputTag('slimmedJetsAK8'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsCompact + btagDiscriminatorsCustomSaveAsSeparate,
+        btagDiscriminators=pfParticleNetMassRegressionOutputs + btagDiscriminatorsCustomSaveAsCompact + btagDiscriminatorsCustomSaveAsSeparate + pfParticleNetFromMiniAODAK8JetTagsAll + pfParticleNetJetTagsAll,
     )
     srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
