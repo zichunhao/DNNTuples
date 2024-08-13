@@ -114,7 +114,7 @@ def setup_job_directory(job_dir: Path) -> None:
 
 def search_dataset(dataset: str, job_dir: Path) -> int:
     os.system(f"bash dataset_search.sh {dataset} {job_dir}")
-    with open("dataset.txt", "r") as f:
+    with open(job_dir / "dataset.txt", "r") as f:
         return sum(1 for line in f if line.strip())
 
 
