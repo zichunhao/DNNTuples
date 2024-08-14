@@ -2,11 +2,12 @@ from pathlib import Path
 import argparse
 import os
 import textwrap
+from typing import Optional
 
 
 def get_condor_script(
     n_files: int,
-    eos_subdir: str,
+    eos_path: str,
     job_dir: Path,
     request_cpus: int = 1,
     request_memory: int = 2000,
@@ -21,7 +22,7 @@ def get_condor_script(
     +ProjectName = "cms.org.cern"
 
     # EOS path to store the output
-    EOSPATH = $ENV(EOS_URL)/{eos_subdir}
+    EOSPATH = {eos_path}
     NTHREAD = {n_thread}
 
     Arguments = $(JOBNUM) $(EOSPATH) $(NTHREAD)
@@ -34,9 +35,9 @@ def get_condor_script(
 
     +JobFlavour = "tomorrow"
 
-    Log        = {job_dir}/log/log-$(Cluster)-$(Process).log
-    Output     = {job_dir}/log/out-$(Cluster)-$(Process).out
-    Error      = {job_dir}/log/err-$(Cluster)-$(Process).err
+    Log        = {job_dir.resolve()}/log/log-$(Cluster)-$(Process).log
+    Output     = {job_dir.resolve()}/log/out-$(Cluster)-$(Process).out
+    Error      = {job_dir.resolve()}/log/err-$(Cluster)-$(Process).err
 
     on_exit_remove   = (ExitBySignal == False) && (ExitCode == 0)
     max_retries      = {max_retries}
@@ -111,19 +112,10 @@ def get_bash_script() -> str:
     ).strip()
 
 
-def setup_job_directory(job_dir: Path) -> None:
-    job_dir.mkdir(parents=True, exist_ok=True)
-    (job_dir / "log").mkdir(exist_ok=True)
-
-
 def search_dataset(dataset: str, job_dir: Path) -> int:
     os.system(f"bash dataset_search.sh {dataset} {job_dir}")
     with open(job_dir / "dataset.txt", "r") as f:
         return sum(1 for line in f if line.strip())
-
-
-def create_eos_directory(eos_dir: Path) -> None:
-    eos_dir.mkdir(parents=True, exist_ok=True)
 
 
 def write_condor_script(job_dir: Path, script_content: str) -> None:
@@ -142,13 +134,10 @@ def main():
     parser = argparse.ArgumentParser(description="Setup Condor job for DNNTuples")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset name")
     parser.add_argument(
-        "--eos-dir", type=str, required=True, help="Full path to the EOS directory"
-    )
-    parser.add_argument(
-        "--eos-subdir",
+        "--eos-path",
         type=str,
         required=True,
-        help="Subdirectory under eos to store the output root files",
+        help="URL to the EOS directory to store the outputs",
     )
     parser.add_argument(
         "--job-tag", type=str, required=True, help="Unique tag for the condor job"
@@ -172,21 +161,22 @@ def main():
         "--n-thread", type=int, default=1, help="Number of threads to run the job"
     )
     parser.add_argument(
-        "--max-retries", type=int, default=5, help="Maximum number of retries for the job"
+        "--max-retries",
+        type=int,
+        default=5,
+        help="Maximum number of retries for the job",
     )
     args = parser.parse_args()
 
     job_dir = (Path(args.job_dir) / args.job_tag).resolve()
-    setup_job_directory(job_dir)
+    job_dir.mkdir(parents=True, exist_ok=True)
+    log_dir = job_dir / "log"
 
     n_lines = search_dataset(args.dataset, job_dir)
 
-    eos_dir = Path(args.eos_dir) / args.eos_subdir
-    create_eos_directory(eos_dir)
-
     condor_script = get_condor_script(
         n_files=n_lines,
-        eos_subdir=args.eos_subdir,
+        eos_path=args.eos_path,
         job_dir=job_dir,
         request_cpus=args.request_cpus,
         request_memory=args.request_memory,
@@ -199,8 +189,8 @@ def main():
     write_bash_script(job_dir, bash_script)
 
     print(f"Condor job files created in {job_dir}")
-    print(f"Log files will be stored in {job_dir / 'log'}")
-    print(f"Output root files will be stored in {eos_dir}")
+    print(f"Log files will be stored in {log_dir}")
+    print(f"Output root files will be stored in {args.eos_path}")
     print(f"To submit the job, run:\ncondor_submit {job_dir / 'dnntuple.jdl'}")
 
 
