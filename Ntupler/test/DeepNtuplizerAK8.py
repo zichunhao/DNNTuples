@@ -291,9 +291,16 @@ process.deepntuplizer.genJetsNoNuSoftDropMatch = 'ak8GenJetsNoNuSoftDropMatch'
 
 # determine sample type with inputFiles name
 _inputfile = options.inputFiles[0]
-process.deepntuplizer.isQCDSample = '/QCD_' in _inputfile
-process.deepntuplizer.isTTBarSample = 'tott' in _inputfile.lower() or 'ttbar' in _inputfile.lower()
-process.deepntuplizer.isHVV2DVarMassSample = '2DMesh' in _inputfile
+if '/qcd' in _inputfile.lower():
+    print("QCD sample")
+    process.deepntuplizer.isQCDSample = True
+elif ('tott' in _inputfile.lower()) or ('ttbar' in _inputfile.lower()):
+    process.deepntuplizer.isTTBarSample = True
+    print("TTBar sample")
+elif '2DMesh' in _inputfile:
+    process.deepntuplizer.isHVV2DVarMassSample = True
+    print("HVV 2DVarMass sample")
+
 process.deepntuplizer.isPythia = 'pythia' in _inputfile.lower()
 process.deepntuplizer.isHerwig = 'herwig' in _inputfile.lower()
 # note: MG can be interfaced w/ either pythia or herwig
