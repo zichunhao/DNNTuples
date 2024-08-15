@@ -171,6 +171,7 @@ def main():
     job_dir = (Path(args.job_dir) / args.job_tag).resolve()
     job_dir.mkdir(parents=True, exist_ok=True)
     log_dir = job_dir / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
 
     n_lines = search_dataset(args.dataset, job_dir)
 
