@@ -7,6 +7,8 @@ DATASETS=(
 )
 for DATASET in "${DATASETS[@]}"; do
     data_tag=$(echo $DATASET | cut -d'/' -f2)
+    data_subtag=$(echo $DATASET | cut -d'/' -f3)
+    data_tag="${data_tag}-${data_subtag}"
     python3 create.py --dataset ${DATASET} \
     --eos-path "root://redirector.t2.ucsd.edu:1095//store/user/zichun/Hbb-tagger/samples/${data_tag}/dnntuples" \
     --job-tag ${data_tag} \
