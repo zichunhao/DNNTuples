@@ -23,6 +23,8 @@
 #include "DeepNTuples/Ntupler/interface/SVFiller.h"
 #include "DeepNTuples/Ntupler/interface/PFCompleteFiller.h"
 
+#include "TH1F.h"
+
 
 using namespace deepntuples;
 
@@ -49,6 +51,8 @@ private:
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetNoNuSoftDropMatchToken_;
 
   bool addLowLevel_;
+  unsigned int eventCounter_;
+  TH1F* h_nevents_;
 
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
@@ -68,7 +72,9 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsWithNuSoftDropMatch"))),
     genJetNoNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsNoNuMatch"))),
     genJetNoNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsNoNuSoftDropMatch"))),
-    addLowLevel_(iConfig.getUntrackedParameter<bool>("addLowLevel", true))
+    addLowLevel_(iConfig.getUntrackedParameter<bool>("addLowLevel", true)),
+    eventCounter_(0),
+    h_nevents_(nullptr)
 {
 
   // register modules
@@ -145,6 +151,7 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       treeWriter->fill();
     }
   }
+  eventCounter_++;
 
 }
 
@@ -159,13 +166,18 @@ void DeepNtuplizer::beginJob() {
   fs->file().SetCompressionLevel(4);
   treeWriter = new TreeWriter(fs->make<TTree>("tree" ,"tree"));
 
-  for(auto *m : modules_)
+  for(auto *m : modules_) {
     m->initBranches(treeWriter);
-
+  }
+  
+  h_nevents_ = fs->make<TH1F>("Nevents", "Nevents", 1, 0, 1);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void DeepNtuplizer::endJob() {
+  if (h_nevents_) {
+    h_nevents_->SetBinContent(1, eventCounter_);
+  }
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------

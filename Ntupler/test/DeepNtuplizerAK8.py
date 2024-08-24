@@ -312,7 +312,9 @@ process.deepntuplizer.isTrainSample = options.isTrainSample
 process.deepntuplizer.addMET = options.addMET
 process.deepntuplizer.addLowLevel = options.addLowLevel
 process.deepntuplizer.isMDTagger = options.isMDTagger
-#==============================================================================================================================#
+
+process.deepntuplizer.isCountEvents = cms.bool(True)
+# ==============================================================================================================================#
 process.p = cms.Path(process.deepntuplizer)
 process.p.associate(patTask)
 process.p.associate(process.genJetTask)
