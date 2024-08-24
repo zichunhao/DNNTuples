@@ -113,9 +113,14 @@ def get_bash_script() -> str:
 
 
 def search_dataset(dataset: str, job_dir: Path) -> int:
-    os.system(f"bash dataset_search.sh {dataset} {job_dir}")
+    dataset_list_path = job_dir / "dataset.txt"
+    if not dataset_list_path.exists():
+        os.system(f"bash dataset_search.sh {dataset} {job_dir}")
     with open(job_dir / "dataset.txt", "r") as f:
-        return sum(1 for line in f if line.strip())
+        num_files = sum(1 for line in f if line.strip())
+    if num_files == 0:
+        raise ValueError(f"No files found for dataset {dataset}")
+    return num_files
 
 
 def write_condor_script(job_dir: Path, script_content: str) -> None:
