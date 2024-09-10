@@ -1,9 +1,9 @@
 #!/bin/bash -xe
 DATASETS=(
-    "/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23BPixMiniAODv4-130X_mcRun3_2023_realistic_postBPix_v6-v2/MINIAODSIM"
-    "/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/MINIAODSIM"
-    "/XtoHH_MX-500to1000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23BPixMiniAODv4-130X_mcRun3_2023_realistic_postBPix_v6-v2/MINIAODSIM"
-    "/XtoHH_MX-500to1000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/MINIAODSIM"
+    # "/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23BPixMiniAODv4-130X_mcRun3_2023_realistic_postBPix_v6-v2/MINIAODSIM"
+    # "/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/MINIAODSIM"
+    # "/XtoHH_MX-500to1000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23BPixMiniAODv4-130X_mcRun3_2023_realistic_postBPix_v6-v2/MINIAODSIM"
+    # "/XtoHH_MX-500to1000_MH-20to250_TuneCP5_13p6TeV_pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/MINIAODSIM"
 )
 for DATASET in "${DATASETS[@]}"; do
     data_tag=$(echo $DATASET | cut -d'/' -f2)

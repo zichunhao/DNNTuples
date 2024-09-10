@@ -1,0 +1,32 @@
+Universe   = vanilla
+Executable = /afs/cern.ch/user/z/zichun/public/Hbb-tagger/run3-hbb-tagger-event-production/DeepNTuples-HH4b/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8-Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/dnntuple.sh
+
++ProjectName = "cms.org.cern"
+
+# EOS path to store the output
+EOSPATH = root://redirector.t2.ucsd.edu:1095//store/user/zichun/Hbb-tagger/samples/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8-Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/dnntuples
+NTHREAD = 1
+
+Arguments = $(JOBNUM) $(EOSPATH) $(NTHREAD)
+
+requirements = (OpSysAndVer =?= "AlmaLinux9")
+request_cpus = 1
+request_memory = 2000
+x509userproxy = $ENV(X509_USER_PROXY)
+use_x509userproxy = true
+
++JobFlavour = "tomorrow"
+
+Log        = /afs/cern.ch/user/z/zichun/public/Hbb-tagger/run3-hbb-tagger-event-production/DeepNTuples-HH4b/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8-Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/log/log-$(Cluster)-$(Process).log
+Output     = /afs/cern.ch/user/z/zichun/public/Hbb-tagger/run3-hbb-tagger-event-production/DeepNTuples-HH4b/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8-Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/log/out-$(Cluster)-$(Process).out
+Error      = /afs/cern.ch/user/z/zichun/public/Hbb-tagger/run3-hbb-tagger-event-production/DeepNTuples-HH4b/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8-Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/log/err-$(Cluster)-$(Process).err
+
+on_exit_remove   = (ExitBySignal == False) && (ExitCode == 0)
+max_retries      = 10
+requirements     = Machine =!= LastRemoteHost
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT
+transfer_output_files   = dummy.cc
+transfer_input_files    = /afs/cern.ch/user/z/zichun/public/Hbb-tagger/run3-hbb-tagger-event-production/DeepNTuples-HH4b/XtoHH_MX-1000to4000_MH-20to250_TuneCP5_13p6TeV_pythia8-Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15-v2/dataset.txt
+
+Queue JOBNUM from seq 1 1862 |
