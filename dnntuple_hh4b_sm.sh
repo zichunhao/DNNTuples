@@ -9,5 +9,5 @@ for DATASET in "${DATASETS[@]}"; do
     --job-tag ${DATASET} \
     --max-retries 10;
     
-    condor_submit ${DATASET}/dnntuple.jdl
+    # condor_submit condor_jobs/${DATASET}/dnntuple.jdl
 done

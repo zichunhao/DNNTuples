@@ -150,7 +150,7 @@ def main():
     parser.add_argument(
         "--job-dir",
         type=str,
-        default=Path.cwd(),
+        default=Path.cwd() / "condor_jobs",
         help="Directory to store the condor job files",
     )
     parser.add_argument(
